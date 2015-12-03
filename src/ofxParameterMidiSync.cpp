@@ -151,10 +151,11 @@ void ofxParameterMidiSync::setSyncGroup( ofParameterGroup & parameters){
 }
 //-----------------------------------------------------
 void ofxParameterMidiSync::reset(){
-    synced.clear();
-    bParameterGroupSetup = false;
-    bIsSetup = false;
     enableMidi(false);
+    synced.clear();
+   // syncGroup.clear();
+    bParameterGroupSetup = false;
+  //  bIsSetup = false;
     bLearning = false;
     bUnlearning = false;
     learningParameter = NULL;
@@ -180,20 +181,24 @@ void ofxParameterMidiSync::enableMidi(bool b){
     }
 }
 //-----------------------------------------------------
-void ofxParameterMidiSync::learn(){
+void ofxParameterMidiSync::learn(bool bLearn){
     if ( bIsSetup ) {
-        bLearning = true;
-        bUnlearning = false;
+        if (bLearning != bLearn) {
+            bLearning = bLearn;
+            bUnlearning = false;
+        }
     }
 }
 //-----------------------------------------------------
-void ofxParameterMidiSync::unlearn(){
+void ofxParameterMidiSync::unlearn(bool bUnlearn){
     if ( bIsSetup ) {
-        if (bLearning) {
-            learningParameter = NULL;
+        if (bUnlearning != bUnlearn) {
+            if (bLearning) {
+                learningParameter = NULL;
+            }
+            bLearning = false;
+            bUnlearning = bUnlearn;
         }
-        bLearning = false;
-        bUnlearning = true;
     }
 }
 //-----------------------------------------------------
@@ -249,6 +254,7 @@ bool ofxParameterMidiSync::load(string path){
     ofXml xml;
     bool bLoad = false;
     
+    cout << "ofxParameterMidiSync::load(" << path << ");" << endl;
     //    cout << "syncGroup iteration: " << endl;
     //    for (vector<shared_ptr<ofAbstractParameter> >::iterator i = syncGroup.begin(); i != syncGroup.end(); i++){
     //        cout << i->get()->getName() << endl;
@@ -257,9 +263,13 @@ bool ofxParameterMidiSync::load(string path){
     if(bIsSetup){
         bLoad = xml.load(path);
         if (bLoad) {
+            if (xml.exists("ofxParameterMidiSync")) {
+                xml.setTo("ofxParameterMidiSync");
+            }
+
+            
             if (xml.exists("ofParameterMidiInfo")) {
                 xml.setTo("ofParameterMidiInfo[0]");
-                
                 do
                 {
                     if (xml.getName() == "ofParameterMidiInfo"){
@@ -271,6 +281,7 @@ bool ofxParameterMidiSync::load(string path){
                             int multiDimType = xml.getValue<int>("multiDimType");
                             ofAbstractParameter* param = NULL;
                             vector<string> groupHierarchyNames = ofSplitString( xml.getValue<string>("groupHierarchyNames"), "/");
+                            
                             
                             if(groupHierarchyNames.size()){
                                 param  = static_cast<ofAbstractParameter*> (&syncGroup);

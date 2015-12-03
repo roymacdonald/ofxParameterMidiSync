@@ -68,8 +68,8 @@ public:
     bool linkMidiToOfParameter(int controlNum, ofAbstractParameter& param);
     bool linkMidiToOfParameter(ofxMidiMessage& msg, ofAbstractParameter& param);
     
-    void learn();
-    void unlearn();
+    void learn(bool bLearn = true);
+    void unlearn(bool bUnlearn = true);
     
     bool load(string path = "ofxParameterMidiSyncSettings.xml");
     void save(string path = "ofxParameterMidiSyncSettings.xml");
