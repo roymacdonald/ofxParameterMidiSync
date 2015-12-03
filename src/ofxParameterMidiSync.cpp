@@ -149,10 +149,20 @@ void ofxParameterMidiSync::setSyncGroup( ofParameterGroup & parameters){
     syncGroup = parameters;
     bParameterGroupSetup = true;
 }
-
+//-----------------------------------------------------
+void ofxParameterMidiSync::reset(){
+    synced.clear();
+    bParameterGroupSetup = false;
+    bIsSetup = false;
+    enableMidi(false);
+    bLearning = false;
+    bUnlearning = false;
+    learningParameter = NULL;
+    
+}
 //-----------------------------------------------------
 void ofxParameterMidiSync::enableMidi(bool b){
-    if (bIsSetup) {
+    if (bIsSetup && bParameterGroupSetup) {
         if (b != bMidiEnabled) {
             if (b) {
                 midiIn.listPorts();

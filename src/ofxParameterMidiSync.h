@@ -74,6 +74,8 @@ public:
     bool load(string path = "ofxParameterMidiSyncSettings.xml");
     void save(string path = "ofxParameterMidiSyncSettings.xml");
     
+    void reset();
+    
     void drawDebug();
     
     bool isLearning(){return bLearning;}
