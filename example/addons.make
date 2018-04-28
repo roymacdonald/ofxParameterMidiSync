@@ -1,0 +1,3 @@
+ofxGui
+ofxMidi
+ofxParameterMidiSync

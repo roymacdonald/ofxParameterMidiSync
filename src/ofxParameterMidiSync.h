@@ -11,68 +11,32 @@
 
 #include "ofMain.h"
 #include "ofxMidi.h"
+#include "ofxMidiRecorder.h"
+#include "ofxParameterMidiInfo.h"
+#include "nanoKontrolConstants.h"
 
 
-
-struct ofParameterMidiInfo {
-    ofParameterMidiInfo(ofAbstractParameter* p = NULL):ofParameterMidiInfo(p, 1, false, false, 0, 0){}
-    ofParameterMidiInfo(ofAbstractParameter* p, int d, bool bCol, bool bVec, int cNum, int mdType):dims(d), bIsColor(bCol), bIsVec(bVec), controlNum(cNum),multiDimType(mdType){
-        param = p;
-    }
-    int dims;
-    int controlNum;
-    bool bIsColor;
-    bool bIsVec;
-    int multiDimType;
-    ofAbstractParameter * param;
-    void saveToXml(ofXml& xml){
-        if(param){
-            ofXml x;
-            x.addChild("ofParameterMidiInfo");
-            x.setTo("ofParameterMidiInfo");
-            x.addValue("groupHierarchyNames", joinStrings(param->getGroupHierarchyNames(), "/"));
-            x.addValue("dims", dims);
-            x.addValue("controlNum", controlNum);
-            x.addValue("bIsColor", bIsColor);
-            x.addValue("bIsVec", bIsVec);
-            x.addValue("multiDimType", multiDimType);
-            xml.addXml(x);
-        }
-    }
-    void loadFromXml(ofXml& xml){
-    }
-    string joinStrings(vector<string> s, string delim){
-        string r = "";
-        for(int i = 0; i < s.size(); i++){
-            r += s[i];
-            if (i < s.size() -1) {
-                r += delim;
-            }
-        }
-        return r;
-    }
-};
 
 class ofxParameterMidiSync:  public ofxMidiListener {
 public:
     ofxParameterMidiSync();
     ~ofxParameterMidiSync();
     void setup(int portNum);
-    void setup(int portNum, ofAbstractParameter & parameters);
-    void setup(int portNum, ofParameterGroup & parameters);
-    void setSyncGroup( ofAbstractParameter & parameters);
-    void setSyncGroup( ofParameterGroup & parameters);
+	void setup(int portNum, ofAbstractParameter & parameters);//, bool bAutoLink);
+    void setup(int portNum, ofParameterGroup & parameters);//, bool bAutoLink);
+    void setSyncGroup( ofAbstractParameter & parameters);//, bool bAutoLink);
+    void setSyncGroup( ofParameterGroup & parameters);//, bool bAutoLink);
     void enableMidi(bool b = true);
 
-    
-    bool linkMidiToOfParameter(int controlNum, ofAbstractParameter& param);
     bool linkMidiToOfParameter(ofxMidiMessage& msg, ofAbstractParameter& param);
     
     void learn(bool bLearn = true);
     void unlearn(bool bUnlearn = true);
     
-    bool load(string path = "ofxParameterMidiSyncSettings.xml");
-    void save(string path = "ofxParameterMidiSyncSettings.xml");
+	bool load();
+	void save();
+	bool load(string path);
+    void save(string path);
     
     void reset();
     
@@ -81,23 +45,54 @@ public:
     bool isLearning(){return bLearning;}
     bool isUnlearning(){return bUnlearning;}
     
+    ofxMidiRecorder recorder;
+    ofxMidiPlayer player;
+    ofParameter<float> smoothing;
+
+//    ofEvent<void>ffwKeyPressed;
+	
+	void enableSmoothing();
+	void disableSmoothing();
+	bool isSmoothingEnabled();
+	
+	ofParameterGroup parameters;
+	
 protected:
+	void openMidi();
+	void closeMidi();
+	
+	ofParameter<void> bLoad, bSave, bReset;
+	ofParameter<bool> bLearning, bUnlearning, bMidiEnabled, bSmoothingEnabled;
+	ofParameter<int> portNum;
+	ofParameter<std::string>filePath;
+	
+	void update(ofEventArgs& e);
+	
     void newMidiMessage(ofxMidiMessage& eventArgs);
 
-    bool linkMidiToOfParameter(int controlNum, ofAbstractParameter* param);
     bool linkMidiToOfParameter(ofxMidiMessage& msg, ofAbstractParameter* param);
-    
+
     ofxMidiIn midiIn;
+	ofxMidiOut midiOut;
     ofxMidiMessage midiMessage;
 
     void parameterChanged( ofAbstractParameter & parameter );
     ofParameterGroup syncGroup;
     map<int, shared_ptr<ofParameterMidiInfo> > synced;
-    bool bLearning, bUnlearning;
-    int portNum;
-    bool bMidiEnabled;
+//    bool bLearning, bUnlearning;
+//    int portNum;
+//    bool bMidiEnabled;
     bool bIsSetup;
     bool bParameterGroupSetup;
     ofAbstractParameter * learningParameter;
-    
+   
+    shared_ptr<ofxMidiNanoKontrolButtons> kontrolButtons;
+
+//	bool bSmoothingEnabled = false;
+
+private:
+	bool bMidiOpened = false;
+	ofEventListener updateListener;
+	ofEventListeners paramsListeners;
+	
 };

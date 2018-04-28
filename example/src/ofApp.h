@@ -25,12 +25,12 @@ public:
 	
 	
     
-    ofxPanel gui;
+    ofxPanel gui, syncSettingsGui;
     ofParameterGroup groups[3];
-    ofParameter<float> param1,param2;
+    ofParameter<float> param1, param2;
     ofParameter<ofColor>color;
     ofParameter<ofFloatColor>floatColor;
-
+	ofParameter<glm::vec3>vecParam;
     ofParameter<bool> boton;
     
     ofxParameterMidiSync sync;
