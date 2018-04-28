@@ -1,7 +1,9 @@
 #ofxParameterMidiSync
 
 This is an addon for openFrameworks.
+
 It allows to easily sync ofParameters (the ones used with OF's default GUI) with MIDI messages, like the ones coming from a MIDI controller.
+It works with any MIDI controller, although currently it only works propperly with the Korg nanoKontrol. It should work with any other controller but the controller feedback might not be correct.
 
 ##Implementation
 In your ofApp.h file include the addon.
