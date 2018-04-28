@@ -29,7 +29,6 @@ The second argument is the ofParameterGroup that you want to sync to.
 Here we consider the gui object to be an instance of ofxPanel (the default gui for OF).
 
 You can also sync individual ofParameters without syncing a whole group using:
-`linkMidiToOfParameter(int controlNum, ofAbstractParameter& param);`
 `linkMidiToOfParameter(ofxMidiMessage& msg, ofAbstractParameter& param);`
 
 The `ofAbstractParameter` is the base class for all ofParameters, so it doesn't matter wich kind of parameter is, the addon will figure it out.
@@ -51,9 +50,12 @@ If you want to change a ofParameter/MIDIMessage pair just call the `unlearn()` m
 
 When syncing with ofVec2f, ofVec3f, ofVec4f or any ofColor you just need to sync the first parameters of it, the following ones will be automatically assigned to the following MIDI ContinousControl numbers.
 
+
 ##Requirements
-[ofxMidi](https://github.com/danomatika/ofxMidi)
-ofxGui (included in OF)
+- [ofxMidi](https://github.com/danomatika/ofxMidi)
+- ofxGui (included in OF)
 
 ##Compatibility
-Made to work with OF 0.9
+~~Made to work with OF 0.9~~
+
+Currently needs OF v0.10 or newer or the newest nightly build.
