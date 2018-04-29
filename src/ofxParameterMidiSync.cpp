@@ -379,3 +379,16 @@ void ofxParameterMidiSync::disableSmoothing(){
 bool ofxParameterMidiSync::isSmoothingEnabled(){
 	return bSmoothingEnabled;
 }
+//--------------------------------------------------------------
+void ofxParameterMidiSync::setupGui(float x, float y){
+	syncSettingsGui = std::make_shared<ofxPanel>();
+	syncSettingsGui->setup("syncSettingsGui");
+	syncSettingsGui->setPosition(x,y);
+	syncSettingsGui->add(parameters);
+}
+//--------------------------------------------------------------
+void ofxParameterMidiSync::drawGui(){
+	if(syncSettingsGui){
+		syncSettingsGui->draw();
+	}
+}

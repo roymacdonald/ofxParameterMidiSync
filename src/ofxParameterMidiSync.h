@@ -14,7 +14,7 @@
 #include "ofxMidiRecorder.h"
 #include "ofxParameterMidiInfo.h"
 #include "nanoKontrolConstants.h"
-
+#include "ofxGui.h"
 
 
 class ofxParameterMidiSync:  public ofxMidiListener {
@@ -41,7 +41,11 @@ public:
     void reset();
     
     void drawDebug();
-    
+	
+	void setupGui(float x = 10, float y = 10);
+	void drawGui();
+	
+	
     bool isLearning(){return bLearning;}
     bool isUnlearning(){return bUnlearning;}
     
@@ -57,7 +61,10 @@ public:
 	
 	ofParameterGroup parameters;
 	
+	
 protected:
+	std::shared_ptr<ofxPanel> syncSettingsGui;
+	
 	void openMidi();
 	void closeMidi();
 	
