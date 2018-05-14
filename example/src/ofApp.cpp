@@ -7,6 +7,8 @@ void ofApp::setup() {
 	ofBackground(255, 255, 255);
 	ofSetLogLevel(OF_LOG_VERBOSE);
 	
+	
+	// Just setup and add parameters to your gui as you would normally do.
     gui.setup("gui");
 	gui.add(vecParam.set("vecParam", {0, 0, 0}, {-1, -1, -1}, {1, 1, 1}));
 	gui.add(param2.set("param2", 0, 0, 10));
@@ -29,7 +31,15 @@ void ofApp::setup() {
     gui.add(groups[0]);
     
     
-    sync.setup(0, gui.getParameter());
+	// Setup sync.
+	// first parameter is the midi port number. You can print the available ports by uncommenting the following line
+	// ofxMidiIn::listPorts();
+	// Second parameter is the ofParameterGroup to sync.
+	sync.setup(0, gui.getParameter());
+
+	
+	
+	// The following gui is for setting some of the sync parameters.
 	syncSettingsGui.setup("syncSettingsGui");
 	syncSettingsGui.add(sync.parameters);
 	syncSettingsGui.setPosition(gui.getShape().getMaxX() +10, gui.getShape().y);
@@ -45,7 +55,10 @@ void ofApp::draw() {
     gui.draw();
 	syncSettingsGui.draw();
 	
-    sync.drawDebug();
+	
+	//Use the following only for debuging purposes
+	sync.drawDebug();
+	
 }
 
 //--------------------------------------------------------------
@@ -57,6 +70,8 @@ void ofApp::exit() {
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key) {
 
+	
+	//you can use keystrokes too.
 	switch(key) {
 		case ' ':
             sync.learn();
