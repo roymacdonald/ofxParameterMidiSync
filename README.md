@@ -1,11 +1,11 @@
-#ofxParameterMidiSync
+# ofxParameterMidiSync
 
 This is an addon for openFrameworks.
 
 It allows to easily sync ofParameters (the ones used with OF's default GUI) with MIDI messages, like the ones coming from a MIDI controller.
 It works with any MIDI controller, although currently it only works propperly with the Korg nanoKontrol. It should work with any other controller but the controller feedback might not be correct.
 
-##Implementation
+## Implementation
 In your ofApp.h file include the addon.
 
 After the following line:
@@ -45,7 +45,7 @@ Then just call any of the following when needed.
 
 `save(string path)`
 
-##Usage
+## Usage
 
 Follow the example to see how to implement. Once implemented syncing parameters is really easy, you just call the `learn()` method and move a parameter in the gui and a slider or knob in your controller and syncing is ready. This settings can be saved and loaded.
 If you want to change a ofParameter/MIDIMessage pair just call the `unlearn()` method and move either the MIDI controller or the gui param and this will get unsynced.
@@ -53,11 +53,11 @@ If you want to change a ofParameter/MIDIMessage pair just call the `unlearn()` m
 When syncing with ofVec2f, ofVec3f, ofVec4f or any ofColor you just need to sync the first parameters of it, the following ones will be automatically assigned to the following MIDI ContinousControl numbers.
 
 
-##Requirements
+## Requirements
 - [ofxMidi](https://github.com/danomatika/ofxMidi)
 - ofxGui (included in OF)
 
-##Compatibility
+## Compatibility
 ~~Made to work with OF 0.9~~
 
 Currently needs OF v0.10 or newer or the newest nightly build.
