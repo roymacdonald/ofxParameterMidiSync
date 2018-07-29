@@ -11,45 +11,33 @@
 #include "ofxParamMidiSyncUtils.h"
 
 int ofParameterMidiInfo::getParameterAsMidiValue(){
-//Use templated function
+	//Use templated function
 	int mx = 127;
 	if (param) {
 		if (dims > 1 ) {
-			int & ind = multiDimIndex;
 			if (dims > multiDimIndex) {
-				if (multiDimType == 2) {
-					auto p = param->cast<glm::vec2>();
-					return ofMap(p.get()[ind], p.getMin()[ind], p.getMax()[ind], 0, mx);
-				}else if (multiDimType == 3) {
-					auto p = param->cast<glm::vec3>();
-					return ofMap(p.get()[ind], p.getMin()[ind], p.getMax()[ind], 0, mx);
-				}else if (multiDimType == 4) {
-					auto p = param->cast<glm::vec4>();
-					return ofMap(p.get()[ind], p.getMin()[ind], p.getMax()[ind], 0, mx);
-				}else if (multiDimType == 8) {
-					auto p = param->cast<ofColor>();
-					return ofMap(p.get()[ind], p.getMin()[ind], p.getMax()[ind], 0, mx);
-				}else if (multiDimType == 16) {
-					auto p = param->cast<ofShortColor>();
-					return ofMap(p.get()[ind], p.getMin()[ind], p.getMax()[ind], 0, mx);
-				}else if (multiDimType == 32 ) {
-					auto p = param->cast<ofFloatColor>();
-					return ofMap(p.get()[ind], p.getMin()[ind], p.getMax()[ind], 0, mx);
-				}
+					 if (multiDimType == 2) {  return multiDimParamToMidiValue<glm::vec2>();}
+				else if (multiDimType == 3) {  return multiDimParamToMidiValue<glm::vec3>();}
+				else if (multiDimType == 4) {  return multiDimParamToMidiValue<glm::vec4>();}
+				else if (multiDimType == 8) {  return multiDimParamToMidiValue<ofColor>();}
+				else if (multiDimType == 16) { return multiDimParamToMidiValue<ofShortColor>();}
+				else if (multiDimType == 32 ){ return multiDimParamToMidiValue<ofFloatColor>();}
+
 			}
 		}else{
-			if(param->type()==typeid(ofParameter<int>).name()){
-				auto p = param->cast<int>();
-				return ofMap(p.get(), p.getMin(), p.getMax(), 0, mx);
-			}else if(param->type()==typeid(ofParameter<float>).name()){
-				auto p = param->cast<float>();
-				return ofMap(p.get(), p.getMin(), p.getMax(), 0, mx);
-			}else if(param->type()==typeid(ofParameter<double>).name()){
-				auto p = param->cast<double>();
-				return ofMap(p.get(), p.getMin(), p.getMax(), 0, mx);
-			}else if(param->type()==typeid(ofParameter<bool>).name()){				
-				return (param->cast<bool>().get()?mx:0);
-			}
+
+				 if(param->type()==typeid(ofParameter<int8_t>).name()){   return paramToMidiValue<int8_t>  ();}
+			else if(param->type()==typeid(ofParameter<uint8_t>).name()){  return paramToMidiValue<uint8_t> ();}
+			else if(param->type()==typeid(ofParameter<int16_t>).name()){  return paramToMidiValue<int16_t> ();}
+			else if(param->type()==typeid(ofParameter<uint16_t>).name()){ return paramToMidiValue<uint16_t>();}
+			else if(param->type()==typeid(ofParameter<int32_t>).name()){  return paramToMidiValue<int32_t> ();}
+			else if(param->type()==typeid(ofParameter<uint32_t>).name()){ return paramToMidiValue<uint32_t>();}
+			else if(param->type()==typeid(ofParameter<int64_t>).name()){  return paramToMidiValue<int64_t> ();}
+			else if(param->type()==typeid(ofParameter<uint64_t>).name()){ return paramToMidiValue<uint64_t>();}
+			else if(param->type()==typeid(ofParameter<float>).name()){    return paramToMidiValue<float>   ();}
+			else if(param->type()==typeid(ofParameter<double>).name()){   return paramToMidiValue<double>  ();}
+			else if(param->type()==typeid(ofParameter<bool>).name()){	  return (param->cast<bool>().get()?mx:0);}
+
 		}
 	}
 	return 0;
@@ -61,76 +49,32 @@ void ofParameterMidiInfo::mapValueToParameter(float value){
 	int mx = 127;
 	if (param) {
 		if (dims > 1 ) {
-			int & ind = multiDimIndex;
 			if (dims > multiDimIndex) {
-				if (multiDimType == 2) {
-					glm::vec2 v = param->cast<glm::vec2>();
-					float mp = ofMap(value, 0, mx, param->cast<glm::vec2>().getMin()[ind], param->cast<glm::vec2>().getMax()[ind]);
-					if (v[ind] != mp) {
-						v[ind] = mp;
-						param->cast<glm::vec2>() = v;
-					}
-				}else if (multiDimType == 3) {
-					glm::vec3 v = param->cast<glm::vec3>();
-					float mp = ofMap(value, 0, mx, param->cast<glm::vec3>().getMin()[ind], param->cast<glm::vec3>().getMax()[ind]);
-					if (v[ind] != mp) {
-						v[ind] = mp;
-						param->cast<glm::vec3>() = v;
-					}
-				}else if (multiDimType == 4) {
-					glm::vec4 v = param->cast<glm::vec4>();
-					float mp = ofMap(value, 0, mx, param->cast<glm::vec4>().getMin()[ind], param->cast<glm::vec4>().getMax()[ind]);
-					if (v[ind] != mp) {
-						v[ind] = mp;
-						param->cast<glm::vec4>() = v;
-					}
-				}else if (multiDimType == 8) {
-					ofColor v = param->cast<ofColor>();
-					unsigned char mp = ofMap(value, 0, mx, param->cast<ofColor>().getMin()[ind], param->cast<ofColor>().getMax()[ind]);
-					if (v[ind] != mp) {
-						v[ind] = mp;
-						param->cast<ofColor>() = v;
-					}
-				}else if (multiDimType == 16) {
-					ofShortColor v = param->cast<ofShortColor>();
-					unsigned short mp = ofMap(value, 0, mx, param->cast<ofShortColor>().getMin()[ind], param->cast<ofShortColor>().getMax()[ind]);
-					if (v[ind] != mp) {
-						v[ind] = mp;
-						param->cast<ofShortColor>() = v;
-					}
-				}else if (multiDimType == 32 ) {
-					ofFloatColor v = param->cast<ofFloatColor>();
-					float mp = ofMap(value, 0, mx, param->cast<ofFloatColor>().getMin()[ind], param->cast<ofFloatColor>().getMax()[ind]);
-					if (v[ind] != mp) {
-						v[ind] = mp;
-						param->cast<ofFloatColor>() = v;
-					}
-				}
+				      if (multiDimType == 2) { valueToMultiDimParam<glm::vec2>(value);}
+				else if (multiDimType == 3) { valueToMultiDimParam<glm::vec3>(value);}
+				else if (multiDimType == 4) { valueToMultiDimParam<glm::vec4>(value);}
+				else if (multiDimType == 8) { valueToMultiDimParam<ofColor>(value);}
+				else if (multiDimType == 16) {valueToMultiDimParam<ofShortColor>(value);}
+				else if (multiDimType == 32 ){valueToMultiDimParam<ofFloatColor>(value);}
 			}
-		}else{
-			if(param->type()==typeid(ofParameter<int>).name()){
-				int mp = ofMap(value, 0, mx, param->cast<int>().getMin(), param->cast<int>().getMax());
-				if (param->cast<int>() != mp) {
-					param->cast<int>() = mp;
-				}
-			}else if(param->type()==typeid(ofParameter<float>).name()){
-				
-				float mp = ofMap(value, 0, mx, param->cast<float>().getMin(), param->cast<float>().getMax());
-				if (param->cast<float>() != mp) {
-					param->cast<float>() = mp;
-				}
-			}else if(param->type()==typeid(ofParameter<double>).name()){
-				
-				double mp = ofMap(value, 0, mx, param->cast<double>().getMin(), param->cast<double>().getMax());
-				if (param->cast<double>() != mp) {
-					param->cast<double>() = mp;
-				}
-			}else if(param->type()==typeid(ofParameter<bool>).name()){
+		}else{	
+			      if(param->type()==typeid(ofParameter<int8_t>).name()){  valueToParam<int8_t>  (value);}
+			else if(param->type()==typeid(ofParameter<uint8_t>).name()){  valueToParam<uint8_t> (value);}
+			else if(param->type()==typeid(ofParameter<int16_t>).name()){  valueToParam<int16_t> (value);}
+			else if(param->type()==typeid(ofParameter<uint16_t>).name()){ valueToParam<uint16_t>(value);}
+			else if(param->type()==typeid(ofParameter<int32_t>).name()){  valueToParam<int32_t> (value);}
+			else if(param->type()==typeid(ofParameter<uint32_t>).name()){ valueToParam<uint32_t>(value);}
+			else if(param->type()==typeid(ofParameter<int64_t>).name()){  valueToParam<int64_t> (value);}
+			else if(param->type()==typeid(ofParameter<uint64_t>).name()){ valueToParam<uint64_t>(value);}
+			else if(param->type()==typeid(ofParameter<float>).name()){    valueToParam<float>   (value);}
+			else if(param->type()==typeid(ofParameter<double>).name()){   valueToParam<double>  (value);}
+			else if(param->type()==typeid(ofParameter<bool>).name()){
 				bool bVal = value != 0;
 				if (param->cast<bool>() != bVal) {
 					param->cast<bool>() = bVal;
 				}
 			}
+			
 		}
 	}
 }
@@ -138,7 +82,7 @@ bool ofParameterMidiInfo::isMultiDim(){
 	return bIsColor || bIsVec;
 }
 ofParameterMidiInfo::ofParameterMidiInfo(ofAbstractParameter* p){
-
+	
 	param = p;
 }
 ofParameterMidiInfo::ofParameterMidiInfo(ofAbstractParameter* p, ofxMidiMessage& msg, int indexOffset){// int d, bool bCol, bool bVec, int cNum, int mdType, int mdIndex):dims(d), bIsColor(bCol), bIsVec(bVec), controlNum(cNum),multiDimType(mdType), bNeedSmoothing(false), multiDimIndex(mdIndex){
@@ -200,9 +144,11 @@ void ofParameterMidiInfo::saveToXml(ofXml& xml){
 		x.appendChild("bIsButton").set(bIsButton);
 	}
 }
-void ofParameterMidiInfo::sendFeedback(ofxMidiOut & midiOut){
-	if(isSendFeedback()){
-		midiOut.sendControlChange(channel, controlNum, getParameterAsMidiValue());
+void ofParameterMidiInfo::sendFeedback(std::shared_ptr<ofxMidiOut> midiOut){
+	if(midiOut){
+		if(isSendFeedback()){
+			midiOut->sendControlChange(channel, controlNum, getParameterAsMidiValue());
+		}
 	}
 }
 bool ofParameterMidiInfo::loadFromXml(ofXml& xml){

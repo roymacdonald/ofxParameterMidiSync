@@ -62,6 +62,9 @@ public:
 	ofParameterGroup parameters;
 	
 	
+	std::shared_ptr<ofxMidiIn> getMidiIn();
+	std::shared_ptr<ofxMidiOut> getMidiOut();
+	
 protected:
 	std::shared_ptr<ofxPanel> syncSettingsGui;
 	
@@ -79,8 +82,8 @@ protected:
 
     bool linkMidiToOfParameter(ofxMidiMessage& msg, ofAbstractParameter* param);
 
-    ofxMidiIn midiIn;
-	ofxMidiOut midiOut;
+    std::shared_ptr<ofxMidiIn> midiIn;
+	std::shared_ptr<ofxMidiOut> midiOut;
     ofxMidiMessage midiMessage;
 
     void parameterChanged( ofAbstractParameter & parameter );

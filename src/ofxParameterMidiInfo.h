@@ -36,9 +36,38 @@ public:
 	bool isSendFeedback();
 	bool isMultiDim();
 	
-	void sendFeedback(ofxMidiOut & midiOut);
+	void sendFeedback(std::shared_ptr<ofxMidiOut> midiOut);
 	
 	
+protected:
+	template<typename T>
+	void valueToMultiDimParam(float value, int mx = 127){
+		T v = param->cast<T>();
+		float mp = ofMap(value, 0, mx, param->cast<T>().getMin()[multiDimIndex], param->cast<T>().getMax()[multiDimIndex]);
+		if (v[multiDimIndex] != mp) {
+			v[multiDimIndex] = mp;
+			param->cast<T>() = v;
+		}
+	}
+	
+	template<typename T>
+	void valueToParam(float value, int mx = 127){
+		int mp = ofMap(value, 0, mx, param->cast<T>().getMin(), param->cast<T>().getMax());
+		if (param->cast<T>() != mp) {
+			param->cast<T>() = mp;
+		}
+	}
+	
+	template<typename T>
+	int multiDimParamToMidiValue(int mx = 127){
+		auto p = param->cast<T>();
+		return ofMap(p.get()[multiDimIndex], p.getMin()[multiDimIndex], p.getMax()[multiDimIndex], 0, mx);
+	}
+	template<typename T>
+	int paramToMidiValue(int mx = 127){
+		auto p = param->cast<T>();
+		return ofMap(p.get(), p.getMin(), p.getMax(), 0, mx);
+	}	
 
 private:
 	bool bSendFeedback = false;

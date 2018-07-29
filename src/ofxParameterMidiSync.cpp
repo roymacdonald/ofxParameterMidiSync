@@ -20,6 +20,20 @@ ofxParameterMidiSync::~ofxParameterMidiSync(){
     learningParameter = nullptr;
 }
 //-----------------------------------------------------
+std::shared_ptr<ofxMidiIn> ofxParameterMidiSync::getMidiIn(){
+	if(!midiIn){
+		midiIn = std::make_shared<ofxMidiIn>();
+	}
+	return midiIn;
+}
+//-----------------------------------------------------
+std::shared_ptr<ofxMidiOut> ofxParameterMidiSync::getMidiOut(){
+	if(!midiOut){
+		midiOut = std::make_shared<ofxMidiOut>();
+	}
+	return midiOut;
+}
+//-----------------------------------------------------
 void ofxParameterMidiSync::setup(int portNum, ofAbstractParameter & parameters){//, bool bAutoLink){
 	if(ofxParamMidiSync::isParameterGroup(&parameters)){
 		setup(portNum, static_cast<ofParameterGroup&>(parameters));//, bAutoLink);
@@ -43,7 +57,7 @@ void ofxParameterMidiSync::setup(int portNum){
 	parameters.add(bMidiEnabled.set("MidiEnabled", false));
 	parameters.add(bSmoothingEnabled.set("Smoothing Enabled", false));
 	parameters.add(smoothing.set("Smoothing",0.5,0,1));
-	parameters.add(this->portNum.set("Midi Port", portNum, 0, midiIn.getNumInPorts() -1));
+	parameters.add(this->portNum.set("Midi Port", portNum, 0, getMidiIn()->getNumInPorts() -1));
 	paramsListeners.push(bLoad.newListener([&](){
 		load();
 	}));
@@ -132,15 +146,15 @@ void ofxParameterMidiSync::reset(){
 //--------------------------------------------------------------
 void ofxParameterMidiSync::openMidi(){
 	if (bIsSetup && bParameterGroupSetup && !bMidiOpened) {
-		midiIn.listInPorts();
-		bMidiOpened = midiIn.openPort(portNum);
+		getMidiIn()->listInPorts();
+		bMidiOpened = midiIn->openPort(portNum);
 		if (bMidiOpened) {
-			midiIn.ignoreTypes(true, true, false);
-			midiIn.addListener(this);
+			midiIn->ignoreTypes(true, true, false);
+			midiIn->addListener(this);
 			ofAddListener(syncGroup.parameterChangedE(),this,&ofxParameterMidiSync::parameterChanged);
-			midiIn.addListener(&recorder);
-			midiIn.addListener(&player);
-			midiOut.openPort(portNum);
+			midiIn->addListener(&recorder);
+			midiIn->addListener(&player);
+			midiOut->openPort(portNum);
 		}else{
 			bMidiEnabled.disableEvents();
 			bMidiEnabled = false;
@@ -151,12 +165,17 @@ void ofxParameterMidiSync::openMidi(){
 //--------------------------------------------------------------
 void ofxParameterMidiSync::closeMidi(){
 	if (bIsSetup && bParameterGroupSetup && bMidiOpened) {
-		midiIn.closePort();
-		midiIn.removeListener(this);
-		midiIn.removeListener(&recorder);
-		midiIn.removeListener(&player);
+		if(midiIn){
+		midiIn->closePort();
+		midiIn->removeListener(this);
+		midiIn->removeListener(&recorder);
+		midiIn->removeListener(&player);
+		}
+		
 		ofRemoveListener(syncGroup.parameterChangedE(),this,&ofxParameterMidiSync::parameterChanged);
-		midiOut.closePort();
+		if(midiOut){
+			midiOut->closePort();
+		}
 		bMidiOpened = false;
 	}
 }
