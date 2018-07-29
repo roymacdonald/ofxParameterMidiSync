@@ -50,7 +50,7 @@ Then just call any of the following when needed.
 Follow the example to see how to implement. Once implemented syncing parameters is really easy, you just call the `learn()` method and move a parameter in the gui and a slider or knob in your controller and syncing is ready. This settings can be saved and loaded.
 If you want to change a ofParameter/MIDIMessage pair just call the `unlearn()` method and move either the MIDI controller or the gui param and this will get unsynced.
 
-When syncing with ofVec2f, ofVec3f, ofVec4f or any ofColor you just need to sync the first parameters of it, the following ones will be automatically assigned to the following MIDI ContinousControl numbers.
+When syncing with ~~ofVec2f, ofVec3f, ofVec4f~~ glm::vec2, glm::vec3, glm::vec4 or any ofColor you just need to sync the first parameters of it, the following ones will be automatically assigned to the following MIDI ContinousControl numbers.
 
 
 ## Requirements
