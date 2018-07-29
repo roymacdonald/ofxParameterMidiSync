@@ -211,7 +211,7 @@ void ofxParameterMidiSync::parameterChanged( ofAbstractParameter & parameter ){
 }
 //--------------------------------------------------------------
 bool ofxParameterMidiSync::linkMidiToOfParameter(ofxMidiMessage& msg, ofAbstractParameter& param){
-    linkMidiToOfParameter(msg, &param);
+    return linkMidiToOfParameter(msg, &param);
 }
 //--------------------------------------------------------------
 bool ofxParameterMidiSync::linkMidiToOfParameter(ofxMidiMessage& msg, ofAbstractParameter* param){
@@ -232,7 +232,7 @@ bool ofxParameterMidiSync::linkMidiToOfParameter(ofxMidiMessage& msg, ofAbstract
 //--------------------------------------------------------------
 bool ofxParameterMidiSync::load(string path){
 	filePath = path;
-	load();
+	return load();
 }
 //--------------------------------------------------------------
 bool ofxParameterMidiSync::load(){
