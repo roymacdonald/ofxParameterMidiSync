@@ -59,6 +59,7 @@ public:
     ofxMidiRecordingEvent& operator=(const ofxMidiRecordingEvent& from){
         this->time = from.getTime();
         this->message = from.getMessage();
+		return *this;
     }
     
     uint64_t getTime() const{return time;}
@@ -108,7 +109,6 @@ public:
 };
 
 static void saveMidi(const vector<ofxMidiRecordingEvent>& data, float duration, string path){
-    cout << __PRETTY_FUNCTION__ << endl;
     ofXml xml;
     auto midi = xml.appendChild("Midi");
 	

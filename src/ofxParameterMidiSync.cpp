@@ -43,7 +43,7 @@ void ofxParameterMidiSync::setup(int portNum){
 	parameters.add(bMidiEnabled.set("MidiEnabled", false));
 	parameters.add(bSmoothingEnabled.set("Smoothing Enabled", false));
 	parameters.add(smoothing.set("Smoothing",0.5,0,1));
-	parameters.add(this->portNum.set("Midi Port", portNum, 0, ofxMidiIn::getNumPorts() -1));
+	parameters.add(this->portNum.set("Midi Port", portNum, 0, midiIn.getNumInPorts() -1));
 	paramsListeners.push(bLoad.newListener([&](){
 		load();
 	}));
@@ -132,7 +132,7 @@ void ofxParameterMidiSync::reset(){
 //--------------------------------------------------------------
 void ofxParameterMidiSync::openMidi(){
 	if (bIsSetup && bParameterGroupSetup && !bMidiOpened) {
-		midiIn.listPorts();
+		midiIn.listInPorts();
 		bMidiOpened = midiIn.openPort(portNum);
 		if (bMidiOpened) {
 			midiIn.ignoreTypes(true, true, false);
