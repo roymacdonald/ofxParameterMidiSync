@@ -11,33 +11,43 @@
 #include "nanoKontrolConstants.h"
 class ofxMidiNanoKontrolButtons{
 public:
-    ~ofxMidiNanoKontrolButtons(){
-        if(bIsSetup)midi.closePort();
-    }
-    ofxMidiOut midi;
-    bool bIsSetup;
-    void setup(int device){
-        bIsSetup = midi.openPort(device);
+//    ~ofxMidiNanoKontrolButtons(){
+//        if(bIsSetup)midi.closePort();
+//    }
+	std::shared_ptr<ofxMidiOut> midi;
+    
+	void setup(std::shared_ptr<ofxMidiOut> midiOut){
+		midi = midiOut;
     }
     void setRec(bool on = true){
-        if(bIsSetup)
-            midi.sendControlChange(1, NANO_KONTROL_KEY_REC, on?127:0);
+        if(midi){
+//        	std::cout <<"NANO_KONTROL_KEY_REC " << (on?"ON":"OFF") << std::endl;
+            midi->sendControlChange(1, NANO_KONTROL_KEY_REC, on?127:0);
+        }
     }
     void setStop(bool on = true){
-        if(bIsSetup)
-            midi.sendControlChange(1, NANO_KONTROL_KEY_STOP, on?127:0);
+        if(midi){
+//        	std::cout <<"NANO_KONTROL_KEY_STOP " << (on?"ON":"OFF") << std::endl;
+            midi->sendControlChange(1, NANO_KONTROL_KEY_STOP, on?127:0);
+        }
     }
     void setPlay(bool on = true){
-        if(bIsSetup)
-            midi.sendControlChange(1, NANO_KONTROL_KEY_PLAY, on?127:0);
+        if(midi){
+//        	std::cout <<"NANO_KONTROL_KEY_PLAY " << (on?"ON":"OFF") << std::endl;
+            midi->sendControlChange(1, NANO_KONTROL_KEY_PLAY, on?127:0);
+        }
     }
     void setRew(bool on = true){
-        if(bIsSetup)
-            midi.sendControlChange(1, NANO_KONTROL_KEY_REW, on?127:0);
+        if(midi){
+//        	std::cout <<"NANO_KONTROL_KEY_REW " << (on?"ON":"OFF") << std::endl;
+            midi->sendControlChange(1, NANO_KONTROL_KEY_REW, on?127:0);
+        }
     }
     void setFfw(bool on = true){
-        if(bIsSetup)
-            midi.sendControlChange(1, NANO_KONTROL_KEY_FFW, on?127:0);
+        if(midi){
+//        	std::cout <<"NANO_KONTROL_KEY_FFW " << (on?"ON":"OFF") << std::endl;
+            midi->sendControlChange(1, NANO_KONTROL_KEY_FFW, on?127:0);
+        }
     }
 };
 
