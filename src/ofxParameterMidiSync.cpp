@@ -154,7 +154,7 @@ void ofxParameterMidiSync::openMidi(){
 			ofAddListener(syncGroup.parameterChangedE(),this,&ofxParameterMidiSync::parameterChanged);
 			midiIn->addListener(&recorder);
 			midiIn->addListener(&player);
-			midiOut->openPort(portNum);
+			getMidiOut()->openPort(portNum);
 		}else{
 			bMidiEnabled.disableEvents();
 			bMidiEnabled = false;
