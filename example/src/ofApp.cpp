@@ -35,7 +35,10 @@ void ofApp::setup() {
 	// first parameter is the midi port number. You can print the available ports by uncommenting the following line
 	// ofxMidiIn::listPorts();
 	// Second parameter is the ofParameterGroup to sync.
-	sync.setup(0, gui.getParameter());
+	// Third parameter is a boolean that makes the midi recorder available. defaults to true
+    // Fourth parameter is a boolean that makes the midi player available. defaults to true
+	
+	sync.setup(0, gui.getParameter(), true, true);
 
 	
 	
