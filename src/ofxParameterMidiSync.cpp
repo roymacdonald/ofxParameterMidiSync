@@ -34,18 +34,18 @@ std::shared_ptr<ofxMidiOut> ofxParameterMidiSync::getMidiOut(){
 	return midiOut;
 }
 //-----------------------------------------------------
-void ofxParameterMidiSync::setup(int portNum, ofAbstractParameter & parameters){//, bool bAutoLink){
+void ofxParameterMidiSync::setup(int portNum, ofAbstractParameter & parameters, bool bUseRecorder, bool bUsePlayer){//, bool bAutoLink){
 	if(ofxParamMidiSync::isParameterGroup(&parameters)){
-		setup(portNum, static_cast<ofParameterGroup&>(parameters));//, bAutoLink);
+		setup(portNum, static_cast<ofParameterGroup&>(parameters), bUseRecorder, bUsePlayer);//, bAutoLink);
 	}
 }
 //-----------------------------------------------------
-void ofxParameterMidiSync::setup(int portNum, ofParameterGroup & parameters){//, bool bAutoLink){
+void ofxParameterMidiSync::setup(int portNum, ofParameterGroup & parameters, bool bUseRecorder, bool bUsePlayer){//, bool bAutoLink){
 	setSyncGroup(parameters);//, bAutoLink);
-    setup(portNum);
+    setup(portNum, bUseRecorder, bUsePlayer);
 }
 //-----------------------------------------------------
-void ofxParameterMidiSync::setup(int portNum){
+void ofxParameterMidiSync::setup(int portNum, bool bUseRecorder, bool bUsePlayer){
     bIsSetup = true;
 	parameters.setName("ofParameterMidiSync");
 	parameters.add(filePath.set("Save/Load Path", "ofxParameterMidiSyncSettings.xml"));
@@ -100,13 +100,24 @@ void ofxParameterMidiSync::setup(int portNum){
 			bMidiEnabled = true;
 		}
 	}));
+	
+	
+	if(bUsePlayer || bUseRecorder){
+		kontrolButtons = std::make_shared<ofxMidiNanoKontrolButtons>();
+		kontrolButtons->setup(getMidiOut());
+	}
+	if(bUsePlayer){
+		player = std::make_shared<ofxMidiPlayer>();
+		player->setup(this);
+		player->kontrolButtons = kontrolButtons;
+	}
+	if(bUseRecorder){
+		recorder = std::make_shared<ofxMidiRecorder>();
+		recorder->kontrolButtons = kontrolButtons;
+	}
+	
 	enableMidi(true);
-    player.setup(this);
-
-    kontrolButtons = shared_ptr<ofxMidiNanoKontrolButtons>(new ofxMidiNanoKontrolButtons);
-    kontrolButtons->setup(0);
-    player.kontrolButtons = kontrolButtons;
-    recorder.kontrolButtons = kontrolButtons;
+    
 }
 //-----------------------------------------------------
 void ofxParameterMidiSync::update(ofEventArgs& e){
@@ -152,8 +163,9 @@ void ofxParameterMidiSync::openMidi(){
 			midiIn->ignoreTypes(true, true, false);
 			midiIn->addListener(this);
 			ofAddListener(syncGroup.parameterChangedE(),this,&ofxParameterMidiSync::parameterChanged);
-			midiIn->addListener(&recorder);
-			midiIn->addListener(&player);
+			
+			if(recorder)midiIn->addListener(recorder.get());
+			if(player)midiIn->addListener(player.get());
 			getMidiOut()->openPort(portNum);
 		}else{
 			bMidiEnabled.disableEvents();
@@ -168,8 +180,8 @@ void ofxParameterMidiSync::closeMidi(){
 		if(midiIn){
 		midiIn->closePort();
 		midiIn->removeListener(this);
-		midiIn->removeListener(&recorder);
-		midiIn->removeListener(&player);
+		if(recorder)midiIn->removeListener(recorder.get());
+		if(player)  midiIn->removeListener(player.get());
 		}
 		
 		ofRemoveListener(syncGroup.parameterChangedE(),this,&ofxParameterMidiSync::parameterChanged);
@@ -372,7 +384,7 @@ void ofxParameterMidiSync::newMidiMessage(ofxMidiMessage& msg) {
 //				
 				if (synced.count(message.control)) {
                     synced[message.control]->setNewValue(message.value, bSmoothingEnabled);
-					synced[message.control]->sendFeedback(midiOut);
+//					synced[message.control]->sendFeedback(midiOut);
 					
                 }
             }

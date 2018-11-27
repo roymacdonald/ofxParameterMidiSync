@@ -21,9 +21,9 @@ class ofxParameterMidiSync:  public ofxMidiListener {
 public:
     ofxParameterMidiSync();
     ~ofxParameterMidiSync();
-    void setup(int portNum);
-	void setup(int portNum, ofAbstractParameter & parameters);//, bool bAutoLink);
-    void setup(int portNum, ofParameterGroup & parameters);//, bool bAutoLink);
+    void setup(int portNum, bool bUseRecorder = true , bool bUsePlayer = true);
+	void setup(int portNum, ofAbstractParameter & parameters, bool bUseRecorder = true , bool bUsePlayer = true);//, bool bAutoLink);
+    void setup(int portNum, ofParameterGroup & parameters, bool bUseRecorder = true , bool bUsePlayer = true);//, bool bAutoLink);
     void setSyncGroup( ofAbstractParameter & parameters);//, bool bAutoLink);
     void setSyncGroup( ofParameterGroup & parameters);//, bool bAutoLink);
     void enableMidi(bool b = true);
@@ -49,8 +49,8 @@ public:
     bool isLearning(){return bLearning;}
     bool isUnlearning(){return bUnlearning;}
     
-    ofxMidiRecorder recorder;
-    ofxMidiPlayer player;
+    std::shared_ptr<ofxMidiRecorder> recorder;
+    std::shared_ptr<ofxMidiPlayer> player;
     ofParameter<float> smoothing;
 
 //    ofEvent<void>ffwKeyPressed;
