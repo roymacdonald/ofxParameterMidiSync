@@ -43,6 +43,7 @@ public:
     void drawDebug();
 	
 	void setupGui(float x = 10, float y = 10);
+	void setGuiPosition(float x, float y );
 	void drawGui();
 	
 	
@@ -65,6 +66,8 @@ public:
 	std::shared_ptr<ofxMidiIn> getMidiIn();
 	std::shared_ptr<ofxMidiOut> getMidiOut();
 	
+	void setFilePath(std::string path);
+	std::string getFilePath();
 protected:
 	std::shared_ptr<ofxPanel> syncSettingsGui;
 	
@@ -74,7 +77,7 @@ protected:
 	ofParameter<void> bLoad, bSave, bReset;
 	ofParameter<bool> bLearning, bUnlearning, bMidiEnabled, bSmoothingEnabled;
 	ofParameter<int> portNum;
-	ofParameter<std::string>filePath;
+	std::string filePath;
 	
 	void update(ofEventArgs& e);
 	

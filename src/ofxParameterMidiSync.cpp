@@ -47,8 +47,9 @@ void ofxParameterMidiSync::setup(int portNum, ofParameterGroup & parameters, boo
 //-----------------------------------------------------
 void ofxParameterMidiSync::setup(int portNum, bool bUseRecorder, bool bUsePlayer){
     bIsSetup = true;
+	filePath = "ofxParameterMidiSyncSettings.xml";
 	parameters.setName("ofParameterMidiSync");
-	parameters.add(filePath.set("Save/Load Path", "ofxParameterMidiSyncSettings.xml"));
+
 	parameters.add(bLoad.set("Load"));
 	parameters.add(bSave.set("Save"));
 	parameters.add(bReset.set("Reset"));
@@ -270,9 +271,9 @@ bool ofxParameterMidiSync::load(){
     ofXml xml;
     bool bLoad = false;
 	
-    cout << "ofxParameterMidiSync::load(" << filePath.get() << ");" << endl;
+    cout << "ofxParameterMidiSync::load(" << filePath << ");" << endl;
     if(bIsSetup){
-        bLoad = xml.load(filePath.get());
+        bLoad = xml.load(filePath);
         if (bLoad) {
 			auto sync = xml.getChild("ofxParameterMidiSync");
 			if(!syncGroup.getName().empty()){
@@ -331,7 +332,7 @@ void ofxParameterMidiSync::save(){
         i->second.get()->saveToXml(sync);
     }
 	
-    xml.save(filePath.get());
+    xml.save(filePath);
     
 }
 //--------------------------------------------------------------
@@ -418,8 +419,20 @@ void ofxParameterMidiSync::setupGui(float x, float y){
 	syncSettingsGui->add(parameters);
 }
 //--------------------------------------------------------------
+void ofxParameterMidiSync::setGuiPosition(float x, float y ){
+	if(syncSettingsGui)syncSettingsGui->setPosition(x,y);
+}
+//--------------------------------------------------------------
 void ofxParameterMidiSync::drawGui(){
 	if(syncSettingsGui){
 		syncSettingsGui->draw();
 	}
+}
+//--------------------------------------------------------------
+void ofxParameterMidiSync::setFilePath(std::string path){
+	filePath = path;
+}
+//--------------------------------------------------------------
+std::string ofxParameterMidiSync::getFilePath(){
+	return filePath;
 }
