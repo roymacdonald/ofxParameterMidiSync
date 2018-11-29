@@ -135,7 +135,7 @@ void ofxParameterMidiSync::setSyncGroup( ofAbstractParameter & parameters){//, b
 //-----------------------------------------------------
 void ofxParameterMidiSync::setSyncGroup( ofParameterGroup & parameters){//, bool bAutoLink){
     syncGroup = parameters;
-	ofxParamMidiSync::printParamGroupElements(syncGroup);
+//	ofxParamMidiSync::printParamGroupElements(syncGroup);
     bParameterGroupSetup = true;
 //    if (bAutoLink) {
 //        synced.clear();
