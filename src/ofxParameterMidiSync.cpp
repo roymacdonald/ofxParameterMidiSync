@@ -34,14 +34,14 @@ std::shared_ptr<ofxMidiOut> ofxParameterMidiSync::getMidiOut(){
 	return midiOut;
 }
 //-----------------------------------------------------
-void ofxParameterMidiSync::setup(int portNum, ofAbstractParameter & parameters, bool bUseRecorder, bool bUsePlayer){//, bool bAutoLink){
+void ofxParameterMidiSync::setup(int portNum, ofAbstractParameter & parameters, bool bUseRecorder, bool bUsePlayer){
 	if(ofxParamMidiSync::isParameterGroup(&parameters)){
-		setup(portNum, static_cast<ofParameterGroup&>(parameters), bUseRecorder, bUsePlayer);//, bAutoLink);
+		setup(portNum, static_cast<ofParameterGroup&>(parameters), bUseRecorder, bUsePlayer);
 	}
 }
 //-----------------------------------------------------
-void ofxParameterMidiSync::setup(int portNum, ofParameterGroup & parameters, bool bUseRecorder, bool bUsePlayer){//, bool bAutoLink){
-	setSyncGroup(parameters);//, bAutoLink);
+void ofxParameterMidiSync::setup(int portNum, ofParameterGroup & parameters, bool bUseRecorder, bool bUsePlayer){
+	setSyncGroup(parameters);
     setup(portNum, bUseRecorder, bUsePlayer);
 }
 //-----------------------------------------------------
@@ -59,12 +59,9 @@ void ofxParameterMidiSync::setup(int portNum, bool bUseRecorder, bool bUsePlayer
 	parameters.add(bSmoothingEnabled.set("Smoothing Enabled", false));
 	parameters.add(smoothing.set("Smoothing",0.5,0,1));
 	parameters.add(this->portNum.set("Midi Port", portNum, 0, getMidiIn()->getNumInPorts() -1));
-	paramsListeners.push(bLoad.newListener([&](){
-		load();
-	}));
-	paramsListeners.push(bSave.newListener([&](){
-		save();
-	}));
+	
+	paramsListeners.push(bLoad.newListener([&](){ load(); }));
+	paramsListeners.push(bSave.newListener([&](){ save(); }));
 	paramsListeners.push(bReset.newListener(this, &ofxParameterMidiSync::reset));
 	
 	paramsListeners.push(bLearning.newListener([&](bool &){
@@ -102,7 +99,6 @@ void ofxParameterMidiSync::setup(int portNum, bool bUseRecorder, bool bUsePlayer
 		}
 	}));
 	
-	
 	if(bUsePlayer || bUseRecorder){
 		kontrolButtons = std::make_shared<ofxMidiNanoKontrolButtons>();
 		kontrolButtons->setup(getMidiOut());
@@ -127,13 +123,13 @@ void ofxParameterMidiSync::update(ofEventArgs& e){
     }
 }
 //-----------------------------------------------------
-void ofxParameterMidiSync::setSyncGroup( ofAbstractParameter & parameters){//, bool bAutoLink){
+void ofxParameterMidiSync::setSyncGroup( ofAbstractParameter & parameters){
 	if(ofxParamMidiSync::isParameterGroup(&parameters)){
-		setSyncGroup(static_cast<ofParameterGroup&>(parameters));//, bAutoLink);
+		setSyncGroup(static_cast<ofParameterGroup&>(parameters));
 	}
 }
 //-----------------------------------------------------
-void ofxParameterMidiSync::setSyncGroup( ofParameterGroup & parameters){//, bool bAutoLink){
+void ofxParameterMidiSync::setSyncGroup( ofParameterGroup & parameters){
     syncGroup = parameters;
 //	ofxParamMidiSync::printParamGroupElements(syncGroup);
     bParameterGroupSetup = true;
@@ -146,11 +142,7 @@ void ofxParameterMidiSync::setSyncGroup( ofParameterGroup & parameters){//, bool
 }
 //-----------------------------------------------------
 void ofxParameterMidiSync::reset(){
-//    enableMidi(false);
     synced.clear();
-   // syncGroup.clear();
-//    bParameterGroupSetup = false;
-  //  bIsSetup = false;
     bLearning = false;
     bUnlearning = false;
     learningParameter = nullptr;
@@ -286,24 +278,7 @@ bool ofxParameterMidiSync::load(){
 			for(auto & info: PMinfo){
 				int controlNum = info.getChild("controlNum").getIntValue();
                         if(synced.count(controlNum) == 0){
-//                            vector<string> groupHierarchyNames = ofSplitString( info.getChild("groupHierarchyNames").getValue(), "/");
 							ofAbstractParameter* param = ofxParamMidiSync::findParamInGroup(syncGroup, info.getChild("groupHierarchyNames").getValue());
-							//                            if(groupHierarchyNames.size()){
-//                                param  = static_cast<ofAbstractParameter*> (&syncGroup);
-//                                if (param->getName() == groupHierarchyNames[0]) {
-//                                    for (int i = 1; i < groupHierarchyNames.size(); i++) {
-//                                        if (param->type() == typeid(ofParameterGroup).name()) {
-//                                            if (static_cast<ofParameterGroup*>(param)->contains(groupHierarchyNames[i])) {
-//                                                param = &static_cast<ofParameterGroup*>(param)->get(groupHierarchyNames[i]);
-//                                            }else{
-//                                                param = nullptr;
-//                                                break;
-//                                                cout << "ruta incorrecta" << endl;
-//                                            }
-//                                        }
-//                                    }
-//                                }
-//                            }
                             if (param) {
 								auto s = std::make_shared<ofParameterMidiInfo>(param);
 								if(s->loadFromXml(info)){
@@ -395,17 +370,11 @@ void ofxParameterMidiSync::newMidiMessage(ofxMidiMessage& msg) {
 }
 //--------------------------------------------------------------
 void ofxParameterMidiSync::enableSmoothing(){
-//	if(!bSmoothingEnabled){
-		bSmoothingEnabled = true;
-//		updateListener = ofEvents().update.newListener(this, &ofxParameterMidiSync::update);
-//	}
+	bSmoothingEnabled = true;
 }
 //--------------------------------------------------------------
 void ofxParameterMidiSync::disableSmoothing(){
-//	if(bSmoothingEnabled){
-		bSmoothingEnabled = false;
-//		updateListener.unsubscribe();
-//	}
+	bSmoothingEnabled = false;
 }
 //--------------------------------------------------------------
 bool ofxParameterMidiSync::isSmoothingEnabled(){

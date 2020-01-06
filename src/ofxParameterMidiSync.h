@@ -22,10 +22,10 @@ public:
     ofxParameterMidiSync();
     ~ofxParameterMidiSync();
     void setup(int portNum, bool bUseRecorder = true , bool bUsePlayer = true);
-	void setup(int portNum, ofAbstractParameter & parameters, bool bUseRecorder = true , bool bUsePlayer = true);//, bool bAutoLink);
-    void setup(int portNum, ofParameterGroup & parameters, bool bUseRecorder = true , bool bUsePlayer = true);//, bool bAutoLink);
-    void setSyncGroup( ofAbstractParameter & parameters);//, bool bAutoLink);
-    void setSyncGroup( ofParameterGroup & parameters);//, bool bAutoLink);
+	void setup(int portNum, ofAbstractParameter & parameters, bool bUseRecorder = true , bool bUsePlayer = true);
+    void setup(int portNum, ofParameterGroup & parameters, bool bUseRecorder = true , bool bUsePlayer = true);
+    void setSyncGroup( ofAbstractParameter & parameters);
+    void setSyncGroup( ofParameterGroup & parameters);
     void enableMidi(bool b = true);
 
     bool linkMidiToOfParameter(ofxMidiMessage& msg, ofAbstractParameter& param);
@@ -50,11 +50,10 @@ public:
     bool isLearning(){return bLearning;}
     bool isUnlearning(){return bUnlearning;}
     
-    std::shared_ptr<ofxMidiRecorder> recorder;
-    std::shared_ptr<ofxMidiPlayer> player;
+    std::shared_ptr<ofxMidiRecorder> recorder = nullptr;
+    std::shared_ptr<ofxMidiPlayer> player = nullptr;
     ofParameter<float> smoothing;
 
-//    ofEvent<void>ffwKeyPressed;
 	
 	void enableSmoothing();
 	void disableSmoothing();
@@ -92,16 +91,13 @@ protected:
     void parameterChanged( ofAbstractParameter & parameter );
     ofParameterGroup syncGroup;
     map<int, shared_ptr<ofParameterMidiInfo> > synced;
-//    bool bLearning, bUnlearning;
-//    int portNum;
-//    bool bMidiEnabled;
-    bool bIsSetup;
+
+	bool bIsSetup;
     bool bParameterGroupSetup;
     ofAbstractParameter * learningParameter;
    
     shared_ptr<ofxMidiNanoKontrolButtons> kontrolButtons;
 
-//	bool bSmoothingEnabled = false;
 
 private:
 	bool bMidiOpened = false;

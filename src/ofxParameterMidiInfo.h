@@ -13,7 +13,7 @@
 class ofParameterMidiInfo {
 public:
     ofParameterMidiInfo(ofAbstractParameter* p = nullptr);
-	ofParameterMidiInfo(ofAbstractParameter* p, ofxMidiMessage& msg, int indexOffset = 0);// int d, bool bCol, bool bVec, int cNum, int mdType, int mdIndex = 0);
+	ofParameterMidiInfo(ofAbstractParameter* p, ofxMidiMessage& msg, int indexOffset = 0);
     int dims = 0;
     int controlNum = 0;
 	int channel = 0;
