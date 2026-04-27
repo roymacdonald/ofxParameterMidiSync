@@ -85,6 +85,42 @@ void ofParameterMidiInfo::mapValueToParameter(float value){
 bool ofParameterMidiInfo::isMultiDim(){
 	return bIsColor || bIsVec;
 }
+bool ofParameterMidiInfo::isIntegerParam() const {
+	if(!param) return false;
+	const auto t = param->type();
+	return t == typeid(ofParameter<int8_t>).name()
+		|| t == typeid(ofParameter<uint8_t>).name()
+		|| t == typeid(ofParameter<int16_t>).name()
+		|| t == typeid(ofParameter<uint16_t>).name()
+		|| t == typeid(ofParameter<int32_t>).name()
+		|| t == typeid(ofParameter<uint32_t>).name()
+		|| t == typeid(ofParameter<int64_t>).name()
+		|| t == typeid(ofParameter<uint64_t>).name();
+}
+void ofParameterMidiInfo::captureIntValueFromParam(){
+	if(!param) return;
+	const auto t = param->type();
+	if      (t == typeid(ofParameter<int8_t>).name())   { storedIntValue = (int)param->cast<int8_t>().get();   bHasStoredValue = true; }
+	else if (t == typeid(ofParameter<uint8_t>).name())  { storedIntValue = (int)param->cast<uint8_t>().get();  bHasStoredValue = true; }
+	else if (t == typeid(ofParameter<int16_t>).name())  { storedIntValue = (int)param->cast<int16_t>().get();  bHasStoredValue = true; }
+	else if (t == typeid(ofParameter<uint16_t>).name()) { storedIntValue = (int)param->cast<uint16_t>().get(); bHasStoredValue = true; }
+	else if (t == typeid(ofParameter<int32_t>).name())  { storedIntValue = (int)param->cast<int32_t>().get();  bHasStoredValue = true; }
+	else if (t == typeid(ofParameter<uint32_t>).name()) { storedIntValue = (int)param->cast<uint32_t>().get(); bHasStoredValue = true; }
+	else if (t == typeid(ofParameter<int64_t>).name())  { storedIntValue = (int)param->cast<int64_t>().get();  bHasStoredValue = true; }
+	else if (t == typeid(ofParameter<uint64_t>).name()) { storedIntValue = (int)param->cast<uint64_t>().get(); bHasStoredValue = true; }
+}
+void ofParameterMidiInfo::applyStoredIntValue(){
+	if(!param || !bHasStoredValue) return;
+	const auto t = param->type();
+	if      (t == typeid(ofParameter<int8_t>).name())   { param->cast<int8_t>()   = (int8_t)storedIntValue;   }
+	else if (t == typeid(ofParameter<uint8_t>).name())  { param->cast<uint8_t>()  = (uint8_t)storedIntValue;  }
+	else if (t == typeid(ofParameter<int16_t>).name())  { param->cast<int16_t>()  = (int16_t)storedIntValue;  }
+	else if (t == typeid(ofParameter<uint16_t>).name()) { param->cast<uint16_t>() = (uint16_t)storedIntValue; }
+	else if (t == typeid(ofParameter<int32_t>).name())  { param->cast<int32_t>()  = (int32_t)storedIntValue;  }
+	else if (t == typeid(ofParameter<uint32_t>).name()) { param->cast<uint32_t>() = (uint32_t)storedIntValue; }
+	else if (t == typeid(ofParameter<int64_t>).name())  { param->cast<int64_t>()  = (int64_t)storedIntValue;  }
+	else if (t == typeid(ofParameter<uint64_t>).name()) { param->cast<uint64_t>() = (uint64_t)storedIntValue; }
+}
 ofParameterMidiInfo::ofParameterMidiInfo(ofAbstractParameter* p){
 	
 	param = p;
@@ -129,6 +165,13 @@ ofParameterMidiInfo::ofParameterMidiInfo(ofAbstractParameter* p, ofxMidiMessage&
 	feedbackOffValue = 0;
 
 	param = p;
+
+	// Snapshot the parameter's current value at learn time when binding a
+	// MIDI note to a scalar integer parameter. Replayed by setNewValue on
+	// each press so each note recalls a specific int value.
+	if(inputStatus == MIDI_NOTE_ON && dims == 1 && isIntegerParam()){
+		captureIntValueFromParam();
+	}
 }
 void ofParameterMidiInfo::updateSmoothing(float smoothFactor){
 	if (bNeedSmoothing) {
@@ -160,6 +203,12 @@ void ofParameterMidiInfo::setNewValue(int value, bool bUseSmoothing){
 			if(isPress){
 				param->cast<void>().trigger();
 			}
+		}else if(bHasStoredValue){
+			// Note-to-int snapshot binding: recall the value captured at
+			// learn time instead of mapping velocity to the parameter range.
+			if(isPress){
+				applyStoredIntValue();
+			}
 		}
 		else{
 			mapValueToParameter(value);
@@ -190,6 +239,13 @@ void ofParameterMidiInfo::saveToXml(ofXml& xml){
 		fb.appendChild("controlNum").set(feedbackNum);
 		fb.appendChild("onValue").set(feedbackOnValue);
 		fb.appendChild("offValue").set(feedbackOffValue);
+
+		// Persist the note-to-int snapshot so reloaded bindings keep their
+		// "recall this exact int value" behaviour. Only written when set so
+		// legacy files stay legacy.
+		if(bHasStoredValue){
+			x.appendChild("storedIntValue").set(storedIntValue);
+		}
 	}
 }
 void ofParameterMidiInfo::sendFeedback(std::shared_ptr<ofxMidiOut> midiOut){
@@ -263,6 +319,16 @@ bool ofParameterMidiInfo::loadFromXml(ofXml& xml){
 					feedbackNum     = controlNum;
 					feedbackOnValue  = 127;
 					feedbackOffValue = 0;
+				}
+
+				// Note-to-int snapshot: present only when the binding was
+				// learned for an integer parameter. Absent in legacy files,
+				// in which case the binding falls back to velocity-mapping.
+				if(auto siv = xml.getChild("storedIntValue")){
+					storedIntValue  = siv.getIntValue();
+					bHasStoredValue = true;
+				}else{
+					bHasStoredValue = false;
 				}
 
 				ret = true;

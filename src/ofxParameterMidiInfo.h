@@ -48,6 +48,16 @@ public:
     int feedbackOffValue = 0;    // value sent for "false" (or continuous min)
     // ---------------------------------------------------------------------
 
+    // ---- note-to-int snapshot binding -----------------------------------
+    // When a MIDI note is learned to a scalar integer ofParameter, the
+    // parameter's current value is captured here so that pressing the note
+    // later restores that exact value (e.g. "this pad recalls cue index 5").
+    // This turns note bindings into recall triggers instead of velocity-to-
+    // range mappings.
+    int  storedIntValue   = 0;
+    bool bHasStoredValue  = false;
+    // ---------------------------------------------------------------------
+
     void setNewValue(int value, bool bUseSmoothing);
     void updateSmoothing(float smoothFactor);
     void saveToXml(ofXml& xml);
@@ -56,6 +66,9 @@ public:
 	int  getParameterAsMidiValue();
 	bool isSendFeedback();
 	bool isMultiDim();
+	bool isIntegerParam() const;
+	void captureIntValueFromParam();
+	void applyStoredIntValue();
 	
 	void sendFeedback(std::shared_ptr<ofxMidiOut> midiOut);
 	
