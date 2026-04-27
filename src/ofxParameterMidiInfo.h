@@ -22,10 +22,31 @@ public:
     int multiDimType = 0;
 	int multiDimIndex = 0;
 	ofAbstractParameter * param = nullptr;
-	
+
 	float smoothValue;
 	bool bNeedSmoothing = false;
     int lastValue;
+
+    // Status of the incoming MIDI message that drives this parameter.
+    // Defaults to CC for back-compat with old XML files. NOTE_OFF is
+    // normalised to NOTE_ON (one binding represents press + release of
+    // a single note).
+    MidiStatus inputStatus = MIDI_CONTROL_CHANGE;
+
+    // ---- feedback configuration -----------------------------------------
+    // What to send BACK to the controller (e.g. to drive an LED or a
+    // motorised fader). The feedback message is independent of the input
+    // message: a Launch Control XL pad, for example, listens on NoteOn
+    // velocity > 0 but lights its LED green by sending NoteOn back with
+    // velocity 0x3C (= 60). All five fields are persisted to XML so any
+    // device with feedback semantics can be supported just by editing
+    // the settings file — no code changes required.
+    MidiStatus feedbackStatus = MIDI_CONTROL_CHANGE;
+    int feedbackChannel = 0;     // MIDI channel (1-16) for outgoing feedback
+    int feedbackNum     = 0;     // CC number / note pitch for outgoing feedback
+    int feedbackOnValue  = 127;  // value sent for "true" (or continuous max)
+    int feedbackOffValue = 0;    // value sent for "false" (or continuous min)
+    // ---------------------------------------------------------------------
 
     void setNewValue(int value, bool bUseSmoothing);
     void updateSmoothing(float smoothFactor);

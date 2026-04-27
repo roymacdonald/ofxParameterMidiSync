@@ -7,7 +7,56 @@
 //
 
 #pragma once
+#include "ofxMidiConstants.h"
+#include "ofxMidiMessage.h"
+
 namespace ofxParamMidiSync{
+	//------------------------------------------------------------------------------------------
+	// Compact "type" tag used to disambiguate identifier collisions in the
+	// synced map. Without this, CC#36 and Note#36 would map to the same key.
+	enum MessageType {
+		TYPE_CC         = 0,
+		TYPE_NOTE       = 1,   // covers NoteOn / NoteOff (treated as a single binding)
+		TYPE_PITCH_BEND = 2,
+		TYPE_UNKNOWN    = 0xF
+	};
+	//------------------------------------------------------------------------------------------
+	static inline MessageType typeFromStatus(MidiStatus s){
+		switch(s){
+			case MIDI_NOTE_ON:
+			case MIDI_NOTE_OFF:		return TYPE_NOTE;
+			case MIDI_CONTROL_CHANGE:	return TYPE_CC;
+			case MIDI_PITCH_BEND:		return TYPE_PITCH_BEND;
+			default:			return TYPE_UNKNOWN;
+		}
+	}
+	//------------------------------------------------------------------------------------------
+	// The "control number" depends on the message type:
+	// - CC: msg.control
+	// - NoteOn/Off: msg.pitch
+	// - PitchBend: 0 (the entire channel is one bender)
+	static inline int numberFromMessage(const ofxMidiMessage& m){
+		switch(m.status){
+			case MIDI_NOTE_ON:
+			case MIDI_NOTE_OFF:		return m.pitch;
+			case MIDI_CONTROL_CHANGE:	return m.control;
+			default:			return 0;
+		}
+	}
+	//------------------------------------------------------------------------------------------
+	// Pack (type, number) into a single int key so we can keep one synced map
+	// without CC#7 and Note#7 colliding. Channel is intentionally NOT part of
+	// the key so the same binding works regardless of channel reassignment;
+	// channel is recorded inside ofParameterMidiInfo for feedback only.
+	static inline int makeKey(MessageType type, int num){
+		return (int(type) << 8) | (num & 0xFF);
+	}
+	static inline int makeKey(MidiStatus status, int num){
+		return makeKey(typeFromStatus(status), num);
+	}
+	static inline int makeKey(const ofxMidiMessage& m){
+		return makeKey(typeFromStatus(m.status), numberFromMessage(m));
+	}
 	//------------------------------------------------------------------------------------------
 	static inline bool isParameterGroup(ofAbstractParameter* param){
 		if(param){

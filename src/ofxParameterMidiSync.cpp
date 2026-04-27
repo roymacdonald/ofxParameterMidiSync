@@ -255,13 +255,17 @@ bool ofxParameterMidiSync::linkMidiToOfParameter(ofxMidiMessage& msg, ofAbstract
 //--------------------------------------------------------------
 bool ofxParameterMidiSync::linkMidiToOfParameter(ofxMidiMessage& msg, ofAbstractParameter* param){
     if (param ==  nullptr) return false;
-    
-    if (synced.count(msg.control) == 0) {
-		auto s = std::make_shared<ofParameterMidiInfo>(param, msg);
-		synced[msg.control] = s;
+
+    int baseNum = ofxParamMidiSync::numberFromMessage(msg);
+    int key = ofxParamMidiSync::makeKey(msg.status, baseNum);
+
+    if (synced.count(key) == 0) {
+        auto s = std::make_shared<ofParameterMidiInfo>(param, msg);
+        synced[key] = s;
         if (s->isMultiDim()) {
             for (int i = 1; i < s->dims ; i++) {
-                synced[msg.control+i]  = std::make_shared<ofParameterMidiInfo>(param, msg,i);
+                int subKey = ofxParamMidiSync::makeKey(msg.status, baseNum + i);
+                synced[subKey] = std::make_shared<ofParameterMidiInfo>(param, msg, i);
             }
         }
         return true;
@@ -292,16 +296,21 @@ bool ofxParameterMidiSync::load(){
 			auto PMinfo = sync.find("ofParameterMidiInfo");
 			for(auto & info: PMinfo){
 				int controlNum = info.getChild("controlNum").getIntValue();
-                        if(synced.count(controlNum) == 0){
-							ofAbstractParameter* param = ofxParamMidiSync::findParamInGroup(syncGroup, info.getChild("groupHierarchyNames").getValue());
-                            if (param) {
-								auto s = std::make_shared<ofParameterMidiInfo>(param);
-								if(s->loadFromXml(info)){
-									synced[controlNum] = s;
-								}
-                            }
-                        }
-                    }
+				MidiStatus status = MIDI_CONTROL_CHANGE;
+				if(auto isNode = info.getChild("inputStatus")){
+					status = (MidiStatus)isNode.getIntValue();
+				}
+				int key = ofxParamMidiSync::makeKey(status, controlNum);
+				if(synced.count(key) == 0){
+					ofAbstractParameter* param = ofxParamMidiSync::findParamInGroup(syncGroup, info.getChild("groupHierarchyNames").getValue());
+					if (param) {
+						auto s = std::make_shared<ofParameterMidiInfo>(param);
+						if(s->loadFromXml(info)){
+							synced[key] = s;
+						}
+					}
+				}
+			}
         }
     }
     
@@ -339,49 +348,51 @@ void ofxParameterMidiSync::drawDebug(){
 }
 //--------------------------------------------------------------
 void ofxParameterMidiSync::newMidiMessage(ofxMidiMessage& msg) {
-//	std::cout << "ofxParameterMidiSync::newMidiMessage " << msg.toString() << std::endl;
-    if (bIsSetup) {
-        ofxMidiMessage message = msg;
-        if (message.status == MIDI_CONTROL_CHANGE) {
-            if (learningParameter!= nullptr && bLearning) {
-                if (bParameterGroupSetup) {
-                    if (linkMidiToOfParameter(message, learningParameter)){
-                        cout << "learned  " << endl;
-                        learningParameter=nullptr;
-                        bLearning = false;
-                    }
-                }
-            }else if(bUnlearning){
-                if (synced.count(message.control) > 0) {
-                    int dims = synced[message.control]->dims;
-                    if (dims == 0) dims = 1;
-                    if (dims > 4) dims = 4;
-                    for (int i = 0; i < dims; i++) {
-                        if (synced.count(message.control+i)) {
-                            synced.erase(message.control+i);
-                        }
-                    }
-                    bUnlearning  = false;
-                    cout << "unlearned  " << endl;
-                }
-            }else{
-//                if (msg.control == NANO_KONTROL_KEY_FFW) {
-////                    if (msg.value == 127) {
-////                        ofNotifyEvent(ffwKeyPressed, this);
-////                    }
-//                }else if(msg.control == NANO_KONTROL_KEY_REW)  {
-//                }else if(msg.control == NANO_KONTROL_KEY_STOP) {
-//                }else if(msg.control == NANO_KONTROL_KEY_PLAY) {
-//                }else if(msg.control == NANO_KONTROL_KEY_REC)  {
-//				
-				if (synced.count(message.control)) {
-                    synced[message.control]->setNewValue(message.value, bSmoothingEnabled);
-//					synced[message.control]->sendFeedback(midiOut);
-					
-                }
+    if (!bIsSetup) return;
+
+    ofxMidiMessage message = msg;
+    midiMessage = message;
+
+    // Only CC and Note On/Off drive parameter bindings. (Pitch bend,
+    // sysex, clock, etc. are still surfaced via midiMessage for debug
+    // but are not auto-routed.)
+    const bool isCC   = (message.status == MIDI_CONTROL_CHANGE);
+    const bool isNote = (message.status == MIDI_NOTE_ON || message.status == MIDI_NOTE_OFF);
+    if (!isCC && !isNote) return;
+
+    int baseNum = ofxParamMidiSync::numberFromMessage(message);
+    int key     = ofxParamMidiSync::makeKey(message.status, baseNum);
+
+    if (learningParameter != nullptr && bLearning) {
+        // Don't learn from a NoteOff (vel=0 release) — wait for the press.
+        if (message.status == MIDI_NOTE_OFF) return;
+        if (isNote && message.value == 0)  return;
+
+        if (bParameterGroupSetup) {
+            if (linkMidiToOfParameter(message, learningParameter)) {
+                cout << "learned  " << endl;
+                learningParameter = nullptr;
+                bLearning = false;
             }
         }
-        midiMessage = message;
+    }
+    else if (bUnlearning) {
+        if (synced.count(key) > 0) {
+            int dims = synced[key]->dims;
+            if (dims == 0) dims = 1;
+            if (dims > 4) dims = 4;
+            for (int i = 0; i < dims; i++) {
+                int k = ofxParamMidiSync::makeKey(message.status, baseNum + i);
+                if (synced.count(k)) synced.erase(k);
+            }
+            bUnlearning = false;
+            cout << "unlearned  " << endl;
+        }
+    }
+    else {
+        if (synced.count(key)) {
+            synced[key]->setNewValue(message.value, bSmoothingEnabled);
+        }
     }
 }
 //--------------------------------------------------------------

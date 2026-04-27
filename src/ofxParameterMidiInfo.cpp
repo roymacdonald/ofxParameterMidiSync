@@ -43,7 +43,11 @@ int ofParameterMidiInfo::getParameterAsMidiValue(){
 	return 0;
 }
 bool ofParameterMidiInfo::isSendFeedback(){
-	return param || bSendFeedback;
+	// Feedback is opt-in per binding so devices that don't accept echoed
+	// values (or that would create feedback loops with motorised faders)
+	// can disable it. The legacy XML loader sets bSendFeedback=true by
+	// default so old files continue to behave as before.
+	return param != nullptr && bSendFeedback;
 }
 void ofParameterMidiInfo::mapValueToParameter(float value){
 	int mx = 127;
@@ -85,11 +89,18 @@ ofParameterMidiInfo::ofParameterMidiInfo(ofAbstractParameter* p){
 	
 	param = p;
 }
-ofParameterMidiInfo::ofParameterMidiInfo(ofAbstractParameter* p, ofxMidiMessage& msg, int indexOffset){// int d, bool bCol, bool bVec, int cNum, int mdType, int mdIndex):dims(d), bIsColor(bCol), bIsVec(bVec), controlNum(cNum),multiDimType(mdType), bNeedSmoothing(false), multiDimIndex(mdIndex){
+ofParameterMidiInfo::ofParameterMidiInfo(ofAbstractParameter* p, ofxMidiMessage& msg, int indexOffset){
 	if(p == nullptr) return;
-	controlNum = msg.control + indexOffset;
+
+	// Use msg.pitch for note bindings, msg.control for CC.
+	int baseNum = ofxParamMidiSync::numberFromMessage(msg);
+	controlNum = baseNum + indexOffset;
 	channel = msg.channel;
-	
+
+	// Normalise NOTE_OFF -> NOTE_ON so a single binding represents both
+	// the press and release of one note.
+	inputStatus = (msg.status == MIDI_NOTE_OFF) ? MIDI_NOTE_ON : msg.status;
+
 	int isVec = ofxParamMidiSync::isVecParam(p);
 	int isCol = ofxParamMidiSync::isColorParam(p);
 	dims = (isVec + isCol);
@@ -99,9 +110,24 @@ ofParameterMidiInfo::ofParameterMidiInfo(ofAbstractParameter* p, ofxMidiMessage&
 	bIsVec = isVec;
 	multiDimType = isVec + isCol;
 	multiDimIndex = indexOffset;
-	
-	bIsButton = ofxNanoKontrol::isButton(controlNum);
+
+	// Treat note bindings and bool parameters as buttons by default so
+	// they get LED-style feedback.
+	bool isBoolParam   = (p->type() == typeid(ofParameter<bool>).name());
+	bool isNoteBinding = (inputStatus == MIDI_NOTE_ON);
+	bIsButton = ofxNanoKontrol::isButton(controlNum) || isBoolParam || isNoteBinding;
 	bSendFeedback = bIsButton;
+
+	// Feedback defaults: mirror the input message exactly, with full-range
+	// on/off values. Override these in the saved XML to drive coloured
+	// LEDs (e.g. Launch Control XL: onValue=0x3C green, offValue=0x0C off)
+	// without touching code.
+	feedbackStatus  = inputStatus;
+	feedbackChannel = channel;
+	feedbackNum     = controlNum;
+	feedbackOnValue  = 127;
+	feedbackOffValue = 0;
+
 	param = p;
 }
 void ofParameterMidiInfo::updateSmoothing(float smoothFactor){
@@ -116,17 +142,29 @@ void ofParameterMidiInfo::updateSmoothing(float smoothFactor){
 }
 void ofParameterMidiInfo::setNewValue(int value, bool bUseSmoothing){
 	if(lastValue != value){
+		// For note bindings any non-zero "value" (= velocity) is a press;
+		// for CC bindings keep the historical "127 = pressed" rule so that
+		// existing nanoKontrol-style mappings still behave the same.
+		const bool isNote = (inputStatus == MIDI_NOTE_ON);
+		const bool isPress = isNote ? (value > 0) : (value == 127);
+
 		if(bUseSmoothing && !bIsButton){
 			bNeedSmoothing = true;
 			lastValue = value;
-			
+
 		}else if(param->type()==typeid(ofParameter<bool>).name()){
-			if(value == 127){
+			if(isPress){
 				param->cast<bool>() ^=true;
 			}
-		}else{
+		}else if(param->type()==typeid(ofParameter<void>).name()){
+			if(isPress){
+				param->cast<void>().trigger();
+			}
+		}
+		else{
 			mapValueToParameter(value);
 		}
+		lastValue = value;
 	}
 }
 void ofParameterMidiInfo::saveToXml(ofXml& xml){
@@ -134,21 +172,55 @@ void ofParameterMidiInfo::saveToXml(ofXml& xml){
 		auto x = xml.appendChild("ofParameterMidiInfo");
 		x.appendChild("groupHierarchyNames").set(ofxParamMidiSync::joinStrings(param->getGroupHierarchyNames(), "/"));
 		x.appendChild("dims").set(dims);
+		x.appendChild("inputStatus").set((int)inputStatus);
 		x.appendChild("controlNum").set(controlNum);
 		x.appendChild("channel").set(channel);
 		x.appendChild("bIsColor").set(bIsColor);
 		x.appendChild("bIsVec").set(bIsVec);
 		x.appendChild("multiDimType").set(multiDimType);
 		x.appendChild("multiDimIndex").set(multiDimIndex);
-		x.appendChild("bSendFeedback").set(bSendFeedback);
 		x.appendChild("bIsButton").set(bIsButton);
+
+		// Feedback block: enabled flag + status + ch/num/onVal/offVal so a
+		// user can edit the XML to drive any device's LEDs / motors.
+		auto fb = x.appendChild("feedback");
+		fb.appendChild("enabled").set(bSendFeedback);
+		fb.appendChild("status").set((int)feedbackStatus);
+		fb.appendChild("channel").set(feedbackChannel);
+		fb.appendChild("controlNum").set(feedbackNum);
+		fb.appendChild("onValue").set(feedbackOnValue);
+		fb.appendChild("offValue").set(feedbackOffValue);
 	}
 }
 void ofParameterMidiInfo::sendFeedback(std::shared_ptr<ofxMidiOut> midiOut){
-	if(midiOut){
-		if(isSendFeedback()){
-			midiOut->sendControlChange(channel, controlNum, getParameterAsMidiValue());
-		}
+	if(!midiOut || !midiOut->isOpen()) return;
+	if(!isSendFeedback()) return;
+
+	int outValue;
+	if(param && param->type() == typeid(ofParameter<bool>).name()){
+		outValue = param->cast<bool>().get() ? feedbackOnValue : feedbackOffValue;
+	}else{
+		// Continuous parameter: map full MIDI range (0-127) into the
+		// device's "off..on" range so e.g. encoder rings light up
+		// proportionally to the parameter value.
+		int v = getParameterAsMidiValue();
+		outValue = (int)ofMap(v, 0, 127, feedbackOffValue, feedbackOnValue, true);
+	}
+
+	switch(feedbackStatus){
+		case MIDI_NOTE_ON:
+			midiOut->sendNoteOn(feedbackChannel, feedbackNum, outValue);
+			break;
+		case MIDI_NOTE_OFF:
+			midiOut->sendNoteOff(feedbackChannel, feedbackNum, outValue);
+			break;
+		case MIDI_PITCH_BEND:
+			midiOut->sendPitchBend(feedbackChannel, outValue);
+			break;
+		case MIDI_CONTROL_CHANGE:
+		default:
+			midiOut->sendControlChange(feedbackChannel, feedbackNum, outValue);
+			break;
 	}
 }
 bool ofParameterMidiInfo::loadFromXml(ofXml& xml){
@@ -158,13 +230,41 @@ bool ofParameterMidiInfo::loadFromXml(ofXml& xml){
 			if(ofxParamMidiSync::joinStrings(param->getGroupHierarchyNames(), "/") == xml.getChild("groupHierarchyNames").getValue()){
 				dims = xml.getChild("dims").getIntValue();
 				controlNum = xml.getChild("controlNum").getIntValue();
-				channel = xml.getChild("channel").getBoolValue();
+				channel = xml.getChild("channel").getIntValue();   // was getBoolValue() — fixed
 				bIsColor = xml.getChild("bIsColor").getBoolValue();
 				bIsVec = xml.getChild("bIsVec").getBoolValue();
 				multiDimType = xml.getChild("multiDimType").getIntValue();
 				multiDimIndex = xml.getChild("multiDimIndex").getIntValue();
-				bSendFeedback = xml.getChild("bSendFeedback").getBoolValue();
 				bIsButton = xml.getChild("bIsButton").getBoolValue();
+
+				// inputStatus: missing in legacy files -> default to CC.
+				if(auto isNode = xml.getChild("inputStatus")){
+					inputStatus = (MidiStatus)isNode.getIntValue();
+				}else{
+					inputStatus = MIDI_CONTROL_CHANGE;
+				}
+
+				// feedback block: missing in legacy files -> fall back to
+				// flat <bSendFeedback> and mirror the input message.
+				if(auto fb = xml.getChild("feedback")){
+					bSendFeedback   = fb.getChild("enabled").getBoolValue();
+					feedbackStatus  = (MidiStatus)fb.getChild("status").getIntValue();
+					feedbackChannel = fb.getChild("channel").getIntValue();
+					feedbackNum     = fb.getChild("controlNum").getIntValue();
+					feedbackOnValue  = fb.getChild("onValue").getIntValue();
+					feedbackOffValue = fb.getChild("offValue").getIntValue();
+				}else{
+					// Legacy file: there was no per-binding gate, every
+					// bound parameter echoed back. Preserve that here so
+					// existing settings keep working.
+					bSendFeedback = true;
+					feedbackStatus  = inputStatus;
+					feedbackChannel = channel;
+					feedbackNum     = controlNum;
+					feedbackOnValue  = 127;
+					feedbackOffValue = 0;
+				}
+
 				ret = true;
 			}
 		}
