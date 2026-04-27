@@ -48,7 +48,10 @@ public:
     void reset();
     
     void drawDebug();
-	
+
+	void drawInstructions();
+	void drawInstructions(float x, float y);
+
 	void setupGui(float x = 10, float y = 10);
 	void setGuiPosition(float x, float y );
 	void drawGui();
