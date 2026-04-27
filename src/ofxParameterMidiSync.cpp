@@ -12,7 +12,7 @@
 #include "ofxParamMidiSyncUtils.h"
 
 //-----------------------------------------------------
-ofxParameterMidiSync::ofxParameterMidiSync():bMidiEnabled(false), portNum(-1), bLearning(false), learningParameter(nullptr), bIsSetup(false), bUnlearning(false), bParameterGroupSetup(false){
+ofxParameterMidiSync::ofxParameterMidiSync(){
 }
 //-----------------------------------------------------
 ofxParameterMidiSync::~ofxParameterMidiSync(){
@@ -35,31 +35,48 @@ std::shared_ptr<ofxMidiOut> ofxParameterMidiSync::getMidiOut(){
 }
 //-----------------------------------------------------
 void ofxParameterMidiSync::setup(int portNum, ofAbstractParameter & parameters, bool bUseRecorder, bool bUsePlayer){
-	if(ofxParamMidiSync::isParameterGroup(&parameters)){
-		setup(portNum, static_cast<ofParameterGroup&>(parameters), bUseRecorder, bUsePlayer);
-	}
+		setup(portNum, portNum, parameters, bUseRecorder, bUsePlayer);
 }
 //-----------------------------------------------------
 void ofxParameterMidiSync::setup(int portNum, ofParameterGroup & parameters, bool bUseRecorder, bool bUsePlayer){
-	setSyncGroup(parameters);
-    setup(portNum, bUseRecorder, bUsePlayer);
+    setup(portNum, portNum, parameters, bUseRecorder, bUsePlayer);
 }
 //-----------------------------------------------------
+void ofxParameterMidiSync::setup(int inPortNum, int outPortNum, ofAbstractParameter & parameters, bool bUseRecorder, bool bUsePlayer){
+	if(ofxParamMidiSync::isParameterGroup(&parameters)){
+		setup(inPortNum, outPortNum, static_cast<ofParameterGroup&>(parameters), bUseRecorder, bUsePlayer);
+	}	
+}
+//-----------------------------------------------------
+void ofxParameterMidiSync::setup(int inPortNum, int outPortNum, ofParameterGroup & parameters, bool bUseRecorder, bool bUsePlayer){
+	setSyncGroup(parameters);
+    setup(inPortNum, outPortNum, bUseRecorder, bUsePlayer);
+}
+
+//-----------------------------------------------------
 void ofxParameterMidiSync::setup(int portNum, bool bUseRecorder, bool bUsePlayer){
+	setup(portNum, bUseRecorder, bUsePlayer);
+}
+
+//-----------------------------------------------------
+void ofxParameterMidiSync::setup(int inPortNum, int outPortNum, bool bUseRecorder, bool bUsePlayer){
+
     bIsSetup = true;
 	filePath = "ofxParameterMidiSyncSettings.xml";
-	parameters.setName("ofParameterMidiSync");
-
-	parameters.add(bLoad.set("Load"));
-	parameters.add(bSave.set("Save"));
-	parameters.add(bReset.set("Reset"));
-	parameters.add(bLearning.set("Learn", false));
-	parameters.add(bUnlearning.set("Unlearn", false));
-	parameters.add(bMidiEnabled.set("MidiEnabled", false));
-	parameters.add(bSmoothingEnabled.set("Smoothing Enabled", false));
-	parameters.add(smoothing.set("Smoothing",0.5,0,1));
-	parameters.add(this->portNum.set("Midi Port", portNum, 0, getMidiIn()->getNumInPorts() -1));
 	
+	// parameters.add(bLoad.set("Load"));
+	// parameters.add(bSave.set("Save"));
+	// parameters.add(bReset.set("Reset"));
+	// parameters.add(bLearning.set("Learn", false));
+	// parameters.add(bUnlearning.set("Unlearn", false));
+	// parameters.add(bMidiEnabled.set("MidiEnabled", false));
+	// parameters.add(bSmoothingEnabled.set("Smoothing Enabled", false));
+	// parameters.add(smoothing.set("Smoothing",0.5,0,1));
+	this->inPortNum.setMax(std::max(1, getMidiIn()->getNumInPorts()) -1);
+	this->outPortNum.setMax(std::max(1, getMidiOut()->getNumOutPorts()) -1);
+	this->inPortNum = inPortNum;
+	this->outPortNum = outPortNum;
+	 
 	paramsListeners.push(bLoad.newListener([&](){ load(); }));
 	paramsListeners.push(bSave.newListener([&](){ save(); }));
 	paramsListeners.push(bReset.newListener(this, &ofxParameterMidiSync::reset));
@@ -91,8 +108,8 @@ void ofxParameterMidiSync::setup(int portNum, bool bUseRecorder, bool bUsePlayer
 			updateListener.unsubscribe();
 		}
 	}));
-	paramsListeners.push(this->portNum.newListener([&](int &){
-		if(bMidiOpened){
+	paramsListeners.push(this->inPortNum.newListener([&](int &){
+		if(bMidiInOpened){
 			//this will close the current opened midi and reopen using the new port number
 			bMidiEnabled = false;
 			bMidiEnabled = true;
@@ -149,17 +166,18 @@ void ofxParameterMidiSync::reset(){
 }
 //--------------------------------------------------------------
 void ofxParameterMidiSync::openMidi(){
-	if (bIsSetup && bParameterGroupSetup && !bMidiOpened) {
+	if (bIsSetup && bParameterGroupSetup && !bMidiInOpened) {
 		getMidiIn()->listInPorts();
-		bMidiOpened = midiIn->openPort(portNum);
-		if (bMidiOpened) {
-			midiIn->ignoreTypes(true, true, false);
+		bMidiInOpened = midiIn->openPort(inPortNum);
+		if (bMidiInOpened) {
+			midiIn->ignoreTypes(false, false, false);
 			midiIn->addListener(this);
 			ofAddListener(syncGroup.parameterChangedE(),this,&ofxParameterMidiSync::parameterChanged);
 			
 			if(recorder)midiIn->addListener(recorder.get());
 			if(player)midiIn->addListener(player.get());
-			getMidiOut()->openPort(portNum);
+
+			getMidiOut()->openPort(outPortNum);
 		}else{
 			bMidiEnabled.disableEvents();
 			bMidiEnabled = false;
@@ -169,7 +187,7 @@ void ofxParameterMidiSync::openMidi(){
 }
 //--------------------------------------------------------------
 void ofxParameterMidiSync::closeMidi(){
-	if (bIsSetup && bParameterGroupSetup && bMidiOpened) {
+	if (bIsSetup && bParameterGroupSetup && bMidiInOpened) {
 		if(midiIn){
 		midiIn->closePort();
 		midiIn->removeListener(this);
@@ -181,45 +199,20 @@ void ofxParameterMidiSync::closeMidi(){
 		if(midiOut){
 			midiOut->closePort();
 		}
-		bMidiOpened = false;
+		bMidiInOpened = false;
 	}
 }
 //-----------------------------------------------------
 void ofxParameterMidiSync::enableMidi(bool b){
 	bMidiEnabled = b;
-	//    if (bIsSetup && bParameterGroupSetup) {
-//        if (b != bMidiEnabled) {
-//            if (b) {
-//				return openMidi();
-//			}else{
-//				closeMidi();
-//                return true;
-//            }
-//            bMidiEnabled = b;
-//        }
-//    }
-//    return false;
 }
 //-----------------------------------------------------
 void ofxParameterMidiSync::learn(bool bLearn){
-//    if ( bIsSetup ) {
-//        if (bLearning != bLearn) {
             bLearning = bLearn;
-//            bUnlearning = false;
-//        }
-//    }
 }
 //-----------------------------------------------------
 void ofxParameterMidiSync::unlearn(bool bUnlearn){
-//    if ( bIsSetup ) {
-//        if (bUnlearning != bUnlearn) {
-//            if (bLearning) {
-//                learningParameter = nullptr;
-//            }
-//            bLearning = false;
             bUnlearning = bUnlearn;
-//        }
-//    }
 }
 //-----------------------------------------------------
 void ofxParameterMidiSync::parameterChanged( ofAbstractParameter & parameter ){

@@ -24,6 +24,13 @@ public:
     void setup(int portNum, bool bUseRecorder = true , bool bUsePlayer = true);
 	void setup(int portNum, ofAbstractParameter & parameters, bool bUseRecorder = true , bool bUsePlayer = true);
     void setup(int portNum, ofParameterGroup & parameters, bool bUseRecorder = true , bool bUsePlayer = true);
+    void setup(int inPortNum, int outPortNum, bool bUseRecorder = true , bool bUsePlayer = true);
+	void setup(int inPortNum, int outPortNum, ofAbstractParameter & parameters, bool bUseRecorder = true , bool bUsePlayer = true);
+    void setup(int inPortNum, int outPortNum, ofParameterGroup & parameters, bool bUseRecorder = true , bool bUsePlayer = true);
+
+
+
+
     void setSyncGroup( ofAbstractParameter & parameters);
     void setSyncGroup( ofParameterGroup & parameters);
     void enableMidi(bool b = true);
@@ -52,30 +59,35 @@ public:
     
     std::shared_ptr<ofxMidiRecorder> recorder = nullptr;
     std::shared_ptr<ofxMidiPlayer> player = nullptr;
-    ofParameter<float> smoothing;
+    ofParameter<float> smoothing = {"Smoothing",0.5,0,1};
 
-	
 	void enableSmoothing();
 	void disableSmoothing();
 	bool isSmoothingEnabled();
-	
-	ofParameterGroup parameters;
-	
-	
+		
 	std::shared_ptr<ofxMidiIn> getMidiIn();
 	std::shared_ptr<ofxMidiOut> getMidiOut();
 	
 	void setFilePath(std::string path);
 	std::string getFilePath();
+	ofParameter<int> inPortNum =  {"MIDI out port", -1,-1,0};
+	ofParameter<int> outPortNum = {"MIDI in port", -1,-1,0};
+	
 protected:
 	std::shared_ptr<ofxPanel> syncSettingsGui;
 	
 	void openMidi();
 	void closeMidi();
 	
-	ofParameter<void> bLoad, bSave, bReset;
-	ofParameter<bool> bLearning, bUnlearning, bMidiEnabled, bSmoothingEnabled;
-	ofParameter<int> portNum;
+	ofParameter<void> bLoad = {"Load"};
+	ofParameter<void> bSave = {"Save"};
+	ofParameter<void> bReset = {"Reset"};
+	ofParameter<bool> bLearning = {"Learn", false};
+	ofParameter<bool> bUnlearning = {"Unlearn", false};
+	ofParameter<bool> bMidiEnabled = {"MidiEnabled", false};
+	ofParameter<bool> bSmoothingEnabled = {"Smoothing Enabled", false};
+
+
 	std::string filePath;
 	
 	void update(ofEventArgs& e);
@@ -92,15 +104,19 @@ protected:
     ofParameterGroup syncGroup;
     map<int, shared_ptr<ofParameterMidiInfo> > synced;
 
-	bool bIsSetup;
-    bool bParameterGroupSetup;
-    ofAbstractParameter * learningParameter;
+	bool bIsSetup = false;
+	bool bParameterGroupSetup = false;
+	ofAbstractParameter* learningParameter = nullptr;
    
     shared_ptr<ofxMidiNanoKontrolButtons> kontrolButtons;
 
+public:
+	ofParameterGroup parameters = {"ofParameterMidiSync", bLoad, bSave, bReset, bLearning, bUnlearning, bMidiEnabled, bSmoothingEnabled, smoothing, inPortNum, outPortNum};
 
 private:
-	bool bMidiOpened = false;
+	bool bMidiInOpened = false;
+	bool bMidiOutOpened = false;
+
 	ofEventListener updateListener;
 	ofEventListeners paramsListeners;
 	
