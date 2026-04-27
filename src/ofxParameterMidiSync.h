@@ -70,8 +70,8 @@ public:
 	
 	void setFilePath(std::string path);
 	std::string getFilePath();
-	ofParameter<int> inPortNum =  {"MIDI out port", -1,-1,0};
-	ofParameter<int> outPortNum = {"MIDI in port", -1,-1,0};
+	ofParameter<int> inPortNum =  {"MIDI in port", -1,-1,0};
+	ofParameter<int> outPortNum = {"MIDI out port", -1,-1,0};
 	
 protected:
 	std::shared_ptr<ofxPanel> syncSettingsGui;
