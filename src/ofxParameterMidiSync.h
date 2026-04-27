@@ -72,19 +72,19 @@ public:
 	std::string getFilePath();
 	ofParameter<int> inPortNum =  {"MIDI in port", -1,-1,0};
 	ofParameter<int> outPortNum = {"MIDI out port", -1,-1,0};
-	
+	ofParameter<void> bLoad = { "Load" };
+	ofParameter<void> bSave = { "Save" };
+	ofParameter<void> bReset = { "Reset" };
+	ofParameter<bool> bLearning = { "Learn", false };
+	ofParameter<bool> bUnlearning = { "Unlearn", false };
+	ofParameter<bool> bMidiEnabled = { "MidiEnabled", false };
 protected:
 	std::shared_ptr<ofxPanel> syncSettingsGui;
 	
 	void openMidi();
 	void closeMidi();
 	
-	ofParameter<void> bLoad = {"Load"};
-	ofParameter<void> bSave = {"Save"};
-	ofParameter<void> bReset = {"Reset"};
-	ofParameter<bool> bLearning = {"Learn", false};
-	ofParameter<bool> bUnlearning = {"Unlearn", false};
-	ofParameter<bool> bMidiEnabled = {"MidiEnabled", false};
+	
 	ofParameter<bool> bSmoothingEnabled = {"Smoothing Enabled", false};
 
 
