@@ -104,6 +104,7 @@ protected:
     ofxMidiMessage midiMessage;
 
     void parameterChanged( ofAbstractParameter & parameter );
+    void scanForVoidParams(ofParameterGroup & group);
     ofParameterGroup syncGroup;
     map<int, shared_ptr<ofParameterMidiInfo> > synced;
 
@@ -122,5 +123,6 @@ private:
 
 	ofEventListener updateListener;
 	ofEventListeners paramsListeners;
+	ofEventListeners voidParamListeners;
 	
 };

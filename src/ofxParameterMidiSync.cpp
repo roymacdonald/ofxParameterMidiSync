@@ -157,12 +157,27 @@ void ofxParameterMidiSync::setSyncGroup( ofParameterGroup & parameters){
     syncGroup = parameters;
 //	ofxParamMidiSync::printParamGroupElements(syncGroup);
     bParameterGroupSetup = true;
+    voidParamListeners.unsubscribeAll();
+    scanForVoidParams(syncGroup);
 //    if (bAutoLink) {
 //        synced.clear();
 //        for (int i = 0; i < parameters.size(); i++) {
 //            linkMidiToOfParameter(i, parameters.get(i));
 //        }
 //    }
+}
+//-----------------------------------------------------
+void ofxParameterMidiSync::scanForVoidParams(ofParameterGroup & group){
+    for(auto & p : group){
+        if(p->type() == typeid(ofParameterGroup).name()){
+            scanForVoidParams(*std::static_pointer_cast<ofParameterGroup>(p));
+        }else if(p->type() == typeid(ofParameter<void>).name()){
+            auto voidParam = std::static_pointer_cast<ofParameter<void>>(p);
+            voidParamListeners.push(voidParam->newListener([this, voidParam](){
+                parameterChanged(*voidParam);
+            }));
+        }
+    }
 }
 //-----------------------------------------------------
 void ofxParameterMidiSync::reset(){
