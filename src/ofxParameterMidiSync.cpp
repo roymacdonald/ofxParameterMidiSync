@@ -83,6 +83,7 @@ void ofxParameterMidiSync::setup(int inPortNum, int outPortNum, bool bUseRecorde
 	
 	paramsListeners.push(bLearning.newListener([&](bool &){
 		if(bLearning && bIsSetup ) {
+			learningParameter = nullptr;
 			bUnlearning = false;
 		}
 	}));
