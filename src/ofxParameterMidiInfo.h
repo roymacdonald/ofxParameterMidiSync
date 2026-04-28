@@ -71,8 +71,17 @@ public:
 	void applyStoredIntValue();
 	
 	void sendFeedback(std::shared_ptr<ofxMidiOut> midiOut);
-	
-	
+
+	// Human-readable dump of every field, formatted as an aligned multi-line
+	// block. `print()` sends it to ofLogNotice; `toString()` returns it so
+	// callers can route it elsewhere (UI, file, ostream).
+	std::string toString() const;
+	void print() const;
+
+	friend std::ostream& operator<<(std::ostream& os, const ofParameterMidiInfo& info){
+		return os << info.toString();
+	}
+
 protected:
 	template<typename T>
 	void valueToMultiDimParam(float value, int mx = 127){

@@ -9,6 +9,35 @@
 #include "ofxParameterMidiInfo.h"
 #include "nanoKontrolConstants.h"
 #include "ofxParamMidiSyncUtils.h"
+#include <sstream>
+#include <iomanip>
+
+namespace {
+	std::string midiStatusToString(MidiStatus s){
+		switch(s){
+			case MIDI_NOTE_OFF:         return "NOTE_OFF";
+			case MIDI_NOTE_ON:          return "NOTE_ON";
+			case MIDI_CONTROL_CHANGE:   return "CONTROL_CHANGE";
+			case MIDI_PROGRAM_CHANGE:   return "PROGRAM_CHANGE";
+			case MIDI_PITCH_BEND:       return "PITCH_BEND";
+			case MIDI_AFTERTOUCH:       return "AFTERTOUCH";
+			case MIDI_POLY_AFTERTOUCH:  return "POLY_AFTERTOUCH";
+			default:                    return "UNKNOWN(" + ofToString((int)s) + ")";
+		}
+	}
+	std::string multiDimTypeToString(int t){
+		switch(t){
+			case 0:  return "scalar";
+			case 2:  return "glm::vec2";
+			case 3:  return "glm::vec3";
+			case 4:  return "glm::vec4";
+			case 8:  return "ofColor";
+			case 16: return "ofShortColor";
+			case 32: return "ofFloatColor";
+			default: return "unknown(" + ofToString(t) + ")";
+		}
+	}
+}
 
 int ofParameterMidiInfo::getParameterAsMidiValue(){
 	//Use templated function
@@ -336,4 +365,67 @@ bool ofParameterMidiInfo::loadFromXml(ofXml& xml){
 		}
 	}
 	return ret;
+}
+
+std::string ofParameterMidiInfo::toString() const {
+	std::ostringstream o;
+	const std::string sep = "----------------------------------------";
+	o << sep << "\n";
+	o << "ofParameterMidiInfo @ " << this << "\n";
+	o << sep << "\n";
+
+	o << "  parameter:\n";
+	if(param){
+		o << "    path           : " << ofxParamMidiSync::joinStrings(param->getGroupHierarchyNames(), "/") << "\n";
+		o << "    name           : " << param->getName() << "\n";
+		o << "    type           : " << param->type() << "\n";
+		o << "    isInteger      : " << (const_cast<ofParameterMidiInfo*>(this)->isIntegerParam() ? "yes" : "no") << "\n";
+	}else{
+		o << "    <null>\n";
+	}
+
+	o << "  input:\n";
+	o << "    status         : " << midiStatusToString(inputStatus) << "\n";
+	o << "    channel        : " << channel << "\n";
+	o << "    controlNum     : " << controlNum << "\n";
+
+	o << "  shape:\n";
+	o << "    dims           : " << dims << "\n";
+	o << "    bIsColor       : " << (bIsColor ? "true" : "false") << "\n";
+	o << "    bIsVec         : " << (bIsVec   ? "true" : "false") << "\n";
+	o << "    multiDimType   : " << multiDimType << " (" << multiDimTypeToString(multiDimType) << ")\n";
+	o << "    multiDimIndex  : " << multiDimIndex << "\n";
+	o << "    isMultiDim     : " << (const_cast<ofParameterMidiInfo*>(this)->isMultiDim() ? "yes" : "no") << "\n";
+
+	o << "  flags:\n";
+	o << "    bIsButton      : " << (bIsButton      ? "true" : "false") << "\n";
+	o << "    bSendFeedback  : " << (bSendFeedback  ? "true" : "false") << "\n";
+	o << "    bNeedSmoothing : " << (bNeedSmoothing ? "true" : "false") << "\n";
+
+	o << "  runtime:\n";
+	o << "    lastValue      : " << lastValue   << "\n";
+	o << "    smoothValue    : " << smoothValue << "\n";
+	if(param){
+		o << "    midiValueNow   : " << const_cast<ofParameterMidiInfo*>(this)->getParameterAsMidiValue() << "\n";
+	}
+
+	o << "  feedback:\n";
+	o << "    enabled        : " << (bSendFeedback ? "true" : "false") << "\n";
+	o << "    status         : " << midiStatusToString(feedbackStatus) << "\n";
+	o << "    channel        : " << feedbackChannel << "\n";
+	o << "    controlNum     : " << feedbackNum << "\n";
+	o << "    onValue        : " << feedbackOnValue  << "\n";
+	o << "    offValue       : " << feedbackOffValue << "\n";
+
+	o << "  storedInt:\n";
+	o << "    bHasStoredValue: " << (bHasStoredValue ? "true" : "false") << "\n";
+	if(bHasStoredValue){
+		o << "    storedIntValue : " << storedIntValue << "\n";
+	}
+	o << sep;
+	return o.str();
+}
+
+void ofParameterMidiInfo::print() const {
+	ofLogNotice("ofParameterMidiInfo") << "\n" << toString();
 }
