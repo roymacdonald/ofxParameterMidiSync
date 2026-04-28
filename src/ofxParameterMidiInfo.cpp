@@ -179,8 +179,9 @@ ofParameterMidiInfo::ofParameterMidiInfo(ofAbstractParameter* p, ofxMidiMessage&
 	// Treat note bindings and bool parameters as buttons by default so
 	// they get LED-style feedback.
 	bool isBoolParam   = (p->type() == typeid(ofParameter<bool>).name());
+	bool isVoidParam   = (p->type() == typeid(ofParameter<void>).name());
 	bool isNoteBinding = (inputStatus == MIDI_NOTE_ON);
-	bIsButton = ofxNanoKontrol::isButton(controlNum) || isBoolParam || isNoteBinding;
+	bIsButton = ofxNanoKontrol::isButton(controlNum) || isBoolParam || isNoteBinding || isVoidParam;
 	bSendFeedback = bIsButton;
 
 	// Feedback defaults: mirror the input message exactly, with full-range
@@ -213,22 +214,19 @@ void ofParameterMidiInfo::updateSmoothing(float smoothFactor){
 	}
 }
 void ofParameterMidiInfo::setNewValue(int value, bool bUseSmoothing){
-	if(lastValue != value){
+	
 		// For note bindings any non-zero "value" (= velocity) is a press;
 		// for CC bindings keep the historical "127 = pressed" rule so that
 		// existing nanoKontrol-style mappings still behave the same.
 		const bool isNote = (inputStatus == MIDI_NOTE_ON);
-		const bool isPress = isNote ? (value > 0) : (value == 127);
+		const bool isPress = isNote ?true : (value == 127);
 
-		if(bUseSmoothing && !bIsButton){
-			bNeedSmoothing = true;
-			lastValue = value;
-
-		}else if(param->type()==typeid(ofParameter<bool>).name()){
+	if(bIsButton){
+		if(param && param->type() == typeid(ofParameter<bool>).name()){
 			if(isPress){
 				param->cast<bool>() ^=true;
 			}
-		}else if(param->type()==typeid(ofParameter<void>).name()){
+		}else if(param && param->type() == typeid(ofParameter<void>).name()){
 			if(isPress){
 				param->cast<void>().trigger();
 			}
@@ -239,11 +237,12 @@ void ofParameterMidiInfo::setNewValue(int value, bool bUseSmoothing){
 				applyStoredIntValue();
 			}
 		}
+	}
 		else{
 			mapValueToParameter(value);
-		}
-		lastValue = value;
 	}
+	lastValue = value;
+	
 }
 void ofParameterMidiInfo::saveToXml(ofXml& xml){
 	if(param){
