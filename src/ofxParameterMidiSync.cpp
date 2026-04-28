@@ -438,16 +438,17 @@ void ofxParameterMidiSync::newMidiMessage(ofxMidiMessage& msg) {
     // sysex, clock, etc. are still surfaced via midiMessage for debug
     // but are not auto-routed.)
     const bool isCC   = (message.status == MIDI_CONTROL_CHANGE);
-    const bool isNote = (message.status == MIDI_NOTE_ON || message.status == MIDI_NOTE_OFF);
+    const bool isNote = (message.status == MIDI_NOTE_ON );
     if (!isCC && !isNote) return;
 
     int baseNum = ofxParamMidiSync::numberFromMessage(message);
     int key     = ofxParamMidiSync::makeKey(message.status, baseNum);
 
     if (learningParameter != nullptr && bLearning) {
+		
         // Don't learn from a NoteOff (vel=0 release) — wait for the press.
         if (message.status == MIDI_NOTE_OFF) return;
-        if (isNote && message.value == 0)  return;
+//        if (isNote && message.value == 0)  return;
 
         if (bParameterGroupSetup) {
             if (linkMidiToOfParameter(message, learningParameter)) {
