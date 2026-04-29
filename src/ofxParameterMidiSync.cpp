@@ -170,6 +170,7 @@ void ofxParameterMidiSync::setSyncGroup( ofParameterGroup & parameters){
 }
 //-----------------------------------------------------
 void ofxParameterMidiSync::scanForVoidParams(ofParameterGroup & group){
+	voidParamListeners.unsubscribeAll();
     for(auto & p : group){
         if(p->type() == typeid(ofParameterGroup).name()){
             scanForVoidParams(*std::static_pointer_cast<ofParameterGroup>(p));
