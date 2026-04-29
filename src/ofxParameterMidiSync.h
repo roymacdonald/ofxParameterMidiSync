@@ -50,7 +50,6 @@ public:
     void drawDebug();
 
 	void drawInstructions();
-	void drawInstructions(float x, float y);
 
 	void setupGui(float x = 10, float y = 10);
 	void setGuiPosition(float x, float y );
@@ -81,6 +80,9 @@ public:
 	ofParameter<bool> bLearning = { "Learn", false };
 	ofParameter<bool> bUnlearning = { "Unlearn", false };
 	ofParameter<bool> bMidiEnabled = { "MidiEnabled", false };
+
+	const ofxMidiMessage& getLastMidiMessage() { return midiMessage; }
+
 protected:
 	std::shared_ptr<ofxPanel> syncSettingsGui;
 	
@@ -113,6 +115,8 @@ protected:
 	ofAbstractParameter* learningParameter = nullptr;
    
     shared_ptr<ofxMidiNanoKontrolButtons> kontrolButtons;
+
+	std::string getInstructionsString();
 
 public:
 	ofParameterGroup parameters = {"ofParameterMidiSync", bLoad, bSave, bReset, bLearning, bUnlearning, bMidiEnabled, bSmoothingEnabled, smoothing, inPortNum, outPortNum};

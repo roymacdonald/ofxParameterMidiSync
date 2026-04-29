@@ -159,6 +159,7 @@ void ofxParameterMidiSync::setSyncGroup( ofParameterGroup & parameters){
 //	ofxParamMidiSync::printParamGroupElements(syncGroup);
     bParameterGroupSetup = true;
     voidParamListeners.unsubscribeAll();
+
     scanForVoidParams(syncGroup);
 //    if (bAutoLink) {
 //        synced.clear();
@@ -363,66 +364,40 @@ void ofxParameterMidiSync::drawDebug(){
 	
 }
 //--------------------------------------------------------------
+std::string ofxParameterMidiSync::getInstructionsString() {
+	std::string str;
+	if (bLearning) {
+		if (learningParameter == nullptr) {
+			str = "MIDI LEARN enabled\n";
+			str += "1. Click or drag a parameter in the GUI to select it.\n";
+			str += "2. Move a knob/slider or press a pad on your MIDI controller to bind it.\n";
+			str += "Toggle Learn off to cancel.";
+		}
+		else {
+			str = "MIDI LEARN enabled\n";
+			str += "Selected parameter: " + learningParameter->getName() + "\n";
+			str += "Move a knob/slider or press a pad on your MIDI controller to bind it.\n";
+			str += "Click another parameter to change selection, or toggle Learn off to cancel.";
+		}
+	}
+	else if (bUnlearning) {
+		str = "MIDI UNLEARN enabled\n";
+		str += "Move a knob/slider or press a pad on your MIDI controller to remove its binding.\n";
+		str += "Toggle Unlearn off to cancel.";
+	}
+	return str;
+}
+//--------------------------------------------------------------
 void ofxParameterMidiSync::drawInstructions(){
 	if(!bLearning && !bUnlearning) return;
 
-	std::string str;
-	if(bLearning){
-		if(learningParameter == nullptr){
-			str  = "MIDI LEARN enabled\n";
-			str += "1. Click or drag a parameter in the GUI to select it.\n";
-			str += "2. Move a knob/slider or press a pad on your MIDI controller to bind it.\n";
-			str += "Toggle Learn off to cancel.";
-		}else{
-			str  = "MIDI LEARN enabled\n";
-			str += "Selected parameter: " + learningParameter->getName() + "\n";
-			str += "Move a knob/slider or press a pad on your MIDI controller to bind it.\n";
-			str += "Click another parameter to change selection, or toggle Learn off to cancel.";
-		}
-	}else if(bUnlearning){
-		str  = "MIDI UNLEARN enabled\n";
-		str += "Move a knob/slider or press a pad on your MIDI controller to remove its binding.\n";
-		str += "Toggle Unlearn off to cancel.";
-	}
+	std::string str = getInstructionsString();
 
-	float w = 0;
-	{
-		size_t maxLine = 0;
-		size_t cur = 0;
-		for(char c : str){
-			if(c == '\n'){ maxLine = std::max(maxLine, cur); cur = 0; }
-			else cur++;
-		}
-		maxLine = std::max(maxLine, cur);
-		w = maxLine * 8.0f;
-	}
-	float x = (ofGetWidth()  - w) * 0.5f;
+	static ofBitmapFont bf;
+	auto bb = bf.getBoundingBox(str, 0, 0);
+
+	float x = (ofGetWidth()  - bb.width) * 0.5f;
 	float y = 40;
-
-	drawInstructions(x, y);
-}
-//--------------------------------------------------------------
-void ofxParameterMidiSync::drawInstructions(float x, float y){
-	if(!bLearning && !bUnlearning) return;
-
-	std::string str;
-	if(bLearning){
-		if(learningParameter == nullptr){
-			str  = "MIDI LEARN enabled\n";
-			str += "1. Click or drag a parameter in the GUI to select it.\n";
-			str += "2. Move a knob/slider or press a pad on your MIDI controller to bind it.\n";
-			str += "Toggle Learn off to cancel.";
-		}else{
-			str  = "MIDI LEARN enabled\n";
-			str += "Selected parameter: " + learningParameter->getName() + "\n";
-			str += "Move a knob/slider or press a pad on your MIDI controller to bind it.\n";
-			str += "Click another parameter to change selection, or toggle Learn off to cancel.";
-		}
-	}else if(bUnlearning){
-		str  = "MIDI UNLEARN enabled\n";
-		str += "Move a knob/slider or press a pad on your MIDI controller to remove its binding.\n";
-		str += "Toggle Unlearn off to cancel.";
-	}
 
 	ofColor bg = bLearning ? ofColor(0, 90, 160, 220) : ofColor(160, 60, 0, 220);
 	ofDrawBitmapStringHighlight(str, x, y, bg, ofColor::white);
