@@ -95,7 +95,12 @@ protected:
 	
 	template<typename T>
 	void valueToParam(float value, int mx = 127){
-		int mp = ofMap(value, 0, mx, param->cast<T>().getMin(), param->cast<T>().getMax());
+		// Map into the parameter's own type. Using a float intermediate and
+		// casting to T avoids truncating continuous params (e.g. a 0..1 float
+		// would otherwise collapse to just 0 or 1). For integer T this rounds
+		// to the nearest value rather than truncating toward zero.
+		float mapped = ofMap(value, 0, mx, (float)param->cast<T>().getMin(), (float)param->cast<T>().getMax());
+		T mp = std::is_integral<T>::value ? (T)std::round(mapped) : (T)mapped;
 		if (param->cast<T>() != mp) {
 			param->cast<T>() = mp;
 		}
